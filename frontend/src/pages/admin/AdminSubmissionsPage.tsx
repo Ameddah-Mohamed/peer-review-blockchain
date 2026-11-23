@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
+import { mockAdapter } from '../../services/mockAdapter';
 import { Paper, Review } from '../../types';
 import { Button } from '../../components/common/Button';
 import { Card, CardHeader, CardBody } from '../../components/common/Card';
@@ -45,9 +46,15 @@ export const AdminSubmissionsPage: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await adminService.getSubmissions();
-      setSubmissions(data);
+      setSubmissions(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Failed to load submissions:', err);
+      console.error('Failed to load submissions, falling back to mock submissions:', err);
+      try {
+        const fallback = await mockAdapter.getAllSubmissions();
+        setSubmissions(fallback);
+      } catch (mockErr) {
+        console.error('Mock fallback error:', mockErr);
+      }
     } finally {
       setIsLoading(false);
     }

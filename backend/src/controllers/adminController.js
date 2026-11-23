@@ -15,11 +15,23 @@ exports.getOverview = async (req, res, next) => {
     const underReview = await Paper.countDocuments({ status: "under_review" });
     const accepted = await Paper.countDocuments({ status: "accepted" });
     const rejected = await Paper.countDocuments({ status: "rejected" });
+    const revisionRequested = await Paper.countDocuments({ status: "revision_requested" });
 
     const totalReviewers = await User.countDocuments({ role: "reviewer" });
+    const totalAuthors = await User.countDocuments({ role: "author" });
     const totalReviewsExpected = await ReviewerAssignment.countDocuments();
     const totalReviewsCompleted = await Review.countDocuments();
     const blockchainEventsCount = await BlockchainTransaction.countDocuments({ status: "confirmed" });
+
+    let latestBlockNumber = 1;
+    try {
+      if (blockchainService.provider) {
+        latestBlockNumber = await blockchainService.provider.getBlockNumber();
+      }
+    } catch (e) {
+      const lastTx = await BlockchainTransaction.findOne().sort({ blockNumber: -1 });
+      latestBlockNumber = lastTx ? lastTx.blockNumber : 1;
+    }
 
     res.status(200).json({
       success: true,
@@ -29,10 +41,13 @@ exports.getOverview = async (req, res, next) => {
         underReview,
         accepted,
         rejected,
+        revisionRequested,
         totalReviewers,
+        totalAuthors,
         totalReviewsExpected,
         totalReviewsCompleted,
         blockchainEventsCount,
+        latestBlockNumber: Number(latestBlockNumber),
       },
     });
   } catch (error) {
@@ -133,19 +148,26 @@ exports.getSubmissions = async (req, res, next) => {
           currentVersion: p.currentVersion,
           latestFileHash: p.latestFileHash,
           authorPseudonym: p.authorPseudonym,
-          author: {
-            id: p.author._id,
-            name: p.author.name,
-            email: p.author.email,
-            pseudonymId: p.authorPseudonym,
-          },
+          author: p.author
+            ? {
+                id: p.author._id,
+                name: p.author.name,
+                email: p.author.email,
+                pseudonymId: p.authorPseudonym,
+              }
+            : {
+                id: "unknown",
+                name: "Author",
+                email: "author@unknown",
+                pseudonymId: p.authorPseudonym || "AUTH-000000",
+              },
           assignedReviewerCount: assignments.length,
           completedReviewCount: reviews.length,
           assignments: assignments.map((a) => ({
             id: a._id.toString(),
-            reviewerId: a.reviewer._id.toString(),
-            reviewerName: a.reviewer.name,
-            reviewerEmail: a.reviewer.email,
+            reviewerId: a.reviewer ? a.reviewer._id.toString() : "unknown",
+            reviewerName: a.reviewer ? a.reviewer.name : "Reviewer",
+            reviewerEmail: a.reviewer ? a.reviewer.email : "",
             reviewerPseudonym: a.reviewerPseudonym,
             status: a.status,
             reviewStatus: a.reviewStatus,
@@ -153,7 +175,7 @@ exports.getSubmissions = async (req, res, next) => {
           })),
           reviews: reviews.map((r) => ({
             id: `rev_${r._id.toString()}`,
-            reviewerName: r.reviewer.name,
+            reviewerName: r.reviewer ? r.reviewer.name : "Reviewer",
             reviewerPseudonym: r.reviewerPseudonym,
             scores: r.scores,
             overallScore: r.overallScore,

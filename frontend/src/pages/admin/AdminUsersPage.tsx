@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
+import { mockAdapter } from '../../services/mockAdapter';
 import { User, UserRole } from '../../types';
 import { Button } from '../../components/common/Button';
 import { Card, CardHeader, CardBody } from '../../components/common/Card';
@@ -31,9 +32,15 @@ export const AdminUsersPage: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await adminService.getUsers();
-      setUsers(data);
+      setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Failed to load users:', err);
+      console.error('Failed to load users, falling back to mock users:', err);
+      try {
+        const fallback = await mockAdapter.getAllUsers();
+        setUsers(fallback);
+      } catch (mockErr) {
+        console.error('Mock fallback error:', mockErr);
+      }
     } finally {
       setIsLoading(false);
     }

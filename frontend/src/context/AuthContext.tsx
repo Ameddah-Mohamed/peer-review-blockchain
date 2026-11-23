@@ -97,11 +97,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem(USER_KEY);
   };
 
-  const switchDemoUser = (targetRole: UserRole) => {
+  const switchDemoUser = async (targetRole: UserRole) => {
     const demoUser = MOCK_USERS.find((u) => u.role === targetRole);
     if (demoUser) {
       setUser(demoUser);
       setToken(`demo_token_${demoUser.id}`);
+    }
+
+    const demoCreds: Record<UserRole, { email: string; pass: string }> = {
+      admin: { email: 'admin@conference.edu', pass: 'AdminPassword123!' },
+      reviewer: { email: 'prof.smith@university.edu', pass: 'ReviewerPassword123!' },
+      author: { email: 'alice.student@university.edu', pass: 'AuthorPassword123!' },
+    };
+
+    const cred = demoCreds[targetRole];
+    if (cred) {
+      try {
+        const { token: realToken, user: realUser } = await authService.login(cred.email, cred.pass);
+        setToken(realToken);
+        setUser(realUser);
+      } catch (err) {
+        // Keeps demo token fallback
+      }
     }
   };
 

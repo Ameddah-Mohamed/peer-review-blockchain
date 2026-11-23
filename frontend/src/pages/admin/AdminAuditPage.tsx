@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
+import { mockAdapter } from '../../services/mockAdapter';
 import { BlockchainEvent, BlockchainEventType } from '../../types';
 import { Button } from '../../components/common/Button';
 import { Card, CardHeader, CardBody } from '../../components/common/Card';
@@ -27,20 +28,27 @@ export const AdminAuditPage: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await adminService.getAuditTrail();
-      setEvents(data);
+      setEvents(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Failed to load audit events:', err);
+      console.error('Failed to load audit events, falling back to mock events:', err);
+      try {
+        const fallback = await mockAdapter.getAuditTrail();
+        setEvents(fallback);
+      } catch (mockErr) {
+        console.error('Mock fallback error:', mockErr);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const filteredEvents = events.filter((e) => {
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      e.paperId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      e.actorPseudonym.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      e.txHash.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      e.dataHash.toLowerCase().includes(searchQuery.toLowerCase());
+      (e.paperId || '').toLowerCase().includes(q) ||
+      (e.actorPseudonym || '').toLowerCase().includes(q) ||
+      (e.txHash || '').toLowerCase().includes(q) ||
+      (e.dataHash || '').toLowerCase().includes(q);
     const matchesType = eventTypeFilter === 'all' || e.eventType === eventTypeFilter;
     return matchesSearch && matchesType;
   });

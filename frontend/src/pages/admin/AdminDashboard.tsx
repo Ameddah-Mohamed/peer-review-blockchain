@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
+import { mockAdapter } from '../../services/mockAdapter';
 import { ConferenceStats, BlockchainEvent, Paper } from '../../types';
 import { Card, CardHeader, CardBody } from '../../components/common/Card';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -40,14 +41,38 @@ export const AdminDashboard: React.FC = () => {
       setRecentEvents(events.slice(0, 5));
       setSubmissions(papers);
     } catch (err) {
-      console.error('Failed to load admin stats:', err);
+      console.error('Failed to load admin stats, falling back to mock state:', err);
+      try {
+        const fallbackStats = await mockAdapter.getAdminStats();
+        const fallbackEvents = await mockAdapter.getAuditTrail();
+        const fallbackPapers = await mockAdapter.getAllSubmissions();
+        setStats(fallbackStats);
+        setRecentEvents(fallbackEvents.slice(0, 5));
+        setSubmissions(fallbackPapers);
+      } catch (mockErr) {
+        console.error('Mock fallback error:', mockErr);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (isLoading || !stats) {
+  if (isLoading) {
     return <LoadingSpinner message="Loading conference analytics & blockchain state..." />;
+  }
+
+  if (!stats) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8 text-center space-y-4">
+        <p className="text-slate-600 text-sm">Unable to load conference statistics.</p>
+        <button
+          onClick={loadOverviewData}
+          className="px-4 py-2 bg-brand-600 text-white text-xs font-semibold rounded-lg hover:bg-brand-700 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (

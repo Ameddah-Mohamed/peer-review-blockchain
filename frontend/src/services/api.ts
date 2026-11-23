@@ -67,7 +67,15 @@ class ApiClient {
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        throw new Error(data?.message || data?.error || `HTTP error ${response.status}`);
+        const errorMsg = data?.message || data?.error || `HTTP error ${response.status}`;
+        const currentToken = this.getToken();
+        if (
+          (response.status === 401 || response.status === 403) &&
+          (!currentToken || currentToken.startsWith('demo_') || currentToken.startsWith('mock_'))
+        ) {
+          throw new Error('BACKEND_UNAVAILABLE');
+        }
+        throw new Error(errorMsg);
       }
 
       return data as T;
