@@ -1,0 +1,26 @@
+{
+  "name": "peer-review-blockchain",
+  "version": "1.0.0",
+  "description": "Research Paper Submission & Peer-Review Tracker with Ethereum Smart Contracts",
+  "scripts": {
+    "setup": "npm --prefix backend install && npm --prefix frontend install",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:contracts": "npm --prefix backend run deploy:local",
+    "build:frontend": "npm --prefix frontend run build",
+    "build": "npm run build:frontend",
+    "test:contracts": "npm --prefix backend run test:contracts",
+    "test:backend": "npm --prefix backend test",
+    "test": "npm run test:contracts && npm run test:backend",
+    "seed": "npm --prefix backend run seed"
+  },
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "peer-review",
+    "smart-contracts",
+    "double-blind"
+  ],
+  "author": "",
+  "license": "ISC"
+}
