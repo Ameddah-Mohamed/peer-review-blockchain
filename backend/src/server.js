@@ -66,7 +66,8 @@ if (require.main === module) {
         console.warn("[Server] Blockchain initialization notice:", bcErr.message);
       }
 
-      app.listen(PORT, () => {
+      const HOST = process.env.HOST || "127.0.0.1";
+      app.listen(PORT, HOST, () => {
         console.log(`====================================================`);
         console.log(` Research Paper Peer-Review Backend Server Running`);
         console.log(` Base URL: http://localhost:${PORT}/api`);

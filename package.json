@@ -4,15 +4,20 @@
   "description": "Research Paper Submission & Peer-Review Tracker with Ethereum Smart Contracts",
   "scripts": {
     "setup": "npm --prefix backend install && npm --prefix frontend install",
+    "chain": "npm --prefix backend run node:chain",
+    "deploy": "npm --prefix backend run deploy:local",
+    "seed": "npm --prefix backend run seed",
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
-    "build:contracts": "npm --prefix backend run deploy:local",
+    "dev": "concurrently -n \"backend,frontend\" -c \"cyan,green\" \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build:frontend": "npm --prefix frontend run build",
     "build": "npm run build:frontend",
     "test:contracts": "npm --prefix backend run test:contracts",
     "test:backend": "npm --prefix backend test",
-    "test": "npm run test:contracts && npm run test:backend",
-    "seed": "npm --prefix backend run seed"
+    "test": "npm run test:contracts && npm run test:backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   },
   "keywords": [
     "blockchain",
