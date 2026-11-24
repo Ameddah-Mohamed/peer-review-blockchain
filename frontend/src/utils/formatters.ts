@@ -54,32 +54,32 @@ export function getStatusBadgeVariant(status: string): {
     case 'accepted':
       return {
         label: 'Accepted',
-        className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-        dotColor: 'bg-emerald-500',
+        className: 'bg-emerald-50 text-emerald-800 border-emerald-200/80',
+        dotColor: 'bg-emerald-600',
       };
     case 'rejected':
       return {
         label: 'Rejected',
-        className: 'bg-rose-50 text-rose-700 border-rose-200',
-        dotColor: 'bg-rose-500',
+        className: 'bg-rose-50 text-rose-800 border-rose-200/80',
+        dotColor: 'bg-rose-600',
       };
     case 'under_review':
       return {
         label: 'Under Review',
-        className: 'bg-blue-50 text-blue-700 border-blue-200',
-        dotColor: 'bg-blue-500',
+        className: 'bg-sky-50 text-sky-800 border-sky-200/80',
+        dotColor: 'bg-sky-600',
       };
     case 'revision_requested':
       return {
         label: 'Revision Requested',
-        className: 'bg-amber-50 text-amber-700 border-amber-200',
-        dotColor: 'bg-amber-500',
+        className: 'bg-amber-50 text-amber-800 border-amber-200/80',
+        dotColor: 'bg-amber-600',
       };
     case 'submitted':
     default:
       return {
         label: 'Submitted',
-        className: 'bg-slate-100 text-slate-700 border-slate-200',
+        className: 'bg-slate-50 text-slate-700 border-slate-200',
         dotColor: 'bg-slate-500',
       };
   }
@@ -91,16 +91,16 @@ export function getRecommendationBadge(recommendation: string): {
 } {
   switch (recommendation) {
     case 'strong_accept':
-      return { label: 'Strong Accept', className: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+      return { label: 'Strong Accept', className: 'bg-emerald-50 text-emerald-800 border-emerald-200/80' };
     case 'accept':
-      return { label: 'Accept', className: 'bg-teal-50 text-teal-700 border-teal-200' };
+      return { label: 'Accept', className: 'bg-emerald-50/60 text-emerald-700 border-emerald-200/60' };
     case 'borderline':
-      return { label: 'Borderline', className: 'bg-amber-50 text-amber-700 border-amber-200' };
+      return { label: 'Borderline', className: 'bg-amber-50 text-amber-800 border-amber-200/80' };
     case 'reject':
-      return { label: 'Reject', className: 'bg-rose-50 text-rose-700 border-rose-200' };
+      return { label: 'Reject', className: 'bg-rose-50/60 text-rose-700 border-rose-200/60' };
     case 'strong_reject':
-      return { label: 'Strong Reject', className: 'bg-rose-100 text-rose-800 border-rose-300' };
+      return { label: 'Strong Reject', className: 'bg-rose-50 text-rose-800 border-rose-200/80' };
     default:
-      return { label: recommendation, className: 'bg-slate-100 text-slate-700 border-slate-200' };
+      return { label: recommendation, className: 'bg-slate-50 text-slate-700 border-slate-200' };
   }
 }

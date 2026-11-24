@@ -6,37 +6,42 @@ interface BlockchainBadgeProps {
   blockNumber?: number;
   txHash?: string;
   onClick?: () => void;
-  size?: 'sm' | 'md';
+  size?: 'xs' | 'sm' | 'md';
 }
 
 export const BlockchainBadge: React.FC<BlockchainBadgeProps> = ({
   verified = true,
   blockNumber,
   onClick,
-  size = 'md',
+  size = 'sm',
 }) => {
-  const sizeClasses = size === 'sm' ? 'text-[11px] px-2 py-0.5' : 'text-xs px-2.5 py-1';
+  const sizeClasses = {
+    xs: 'text-[10px] px-1.5 py-0.5 gap-1',
+    sm: 'text-[11px] px-2 py-0.5 gap-1.5',
+    md: 'text-xs px-2.5 py-1 gap-1.5',
+  };
 
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={!onClick}
-      className={`inline-flex items-center gap-1.5 font-medium rounded-full border transition-all ${
+      className={`inline-flex items-center font-medium rounded-md border transition-colors ${
         verified
-          ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100/80 hover:border-purple-300'
-          : 'bg-rose-50 text-rose-700 border-rose-200'
-      } ${sizeClasses} ${onClick ? 'cursor-pointer hover:shadow-xs' : 'cursor-default'}`}
+          ? 'bg-slate-50 text-slate-800 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+          : 'bg-rose-50 text-rose-800 border-rose-200'
+      } ${sizeClasses[size]} ${onClick ? 'cursor-pointer' : 'cursor-default'}`}
+      title={onClick ? 'Click to inspect cryptographic proof' : undefined}
     >
       {verified ? (
-        <ShieldCheck className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
       ) : (
         <ShieldAlert className="w-3.5 h-3.5 text-rose-600 shrink-0" />
       )}
-      <span>{verified ? 'On-Chain Verified' : 'Unverified'}</span>
-      {blockNumber && (
-        <span className="font-mono text-[10px] bg-purple-200/60 text-purple-800 px-1.5 py-0.2 rounded-full inline-flex items-center gap-0.5">
-          <Cpu className="w-2.5 h-2.5" />#{blockNumber}
+      <span>{verified ? 'Ledger Verified' : 'Unverified'}</span>
+      {blockNumber !== undefined && blockNumber > 0 && (
+        <span className="font-mono text-[10px] text-slate-500 tabular-nums border-l border-slate-200 pl-1.5 ml-0.5 inline-flex items-center gap-0.5">
+          <Cpu className="w-2.5 h-2.5 text-slate-400" />#{blockNumber}
         </span>
       )}
     </button>
