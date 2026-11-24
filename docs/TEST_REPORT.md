@@ -390,16 +390,35 @@ const demoRoles: UserRole[] = ['author', 'reviewer', 'admin'];
 
 | Objective | Target | Status |
 |---|---|---|
-| Application Setup | Backend, Frontend, MongoDB, Hardhat start | **PASSED** (Requires port change to 5001) |
-| Authentication | Login, Register, Roles (Author, Reviewer, Admin) | **PASSED** (Vulnerabilities must be patched) |
-| Paper Submission | PDF Upload, SHA-256 hash, v1 & v2 versions | **PASSED** |
+| Application Setup | Backend, Frontend, MongoDB, Hardhat start | **PASSED** (Backend running on port 5001 with Vite proxy) |
+| Authentication | Login, Register, Roles (Author, Reviewer, Admin) | **PASSED** (Secured; backdoor & admin self-registration removed) |
+| Paper Submission | PDF Upload, SHA-256 hash, v1 & v2 versions | **PASSED** (Active version lookup fixed) |
 | Reviewer Management | Assignment, isolation, conflict of interest check | **PASSED** |
 | Double-Blind Privacy | Reviewers cannot see authors; Authors cannot see reviewers | **PASSED** |
-| Review Submission | Form, scores, comments, on-chain hash commitment | **PASSED** |
+| Review Submission | Form, scores, comments, on-chain hash commitment | **PASSED** (Canonical schema aligned) |
 | Final Decisions | Acceptance/rejection restricted to Admin | **PASSED** |
-| Blockchain Integrity | Real EVM transactions, timestamps, hash matching | **PASSED** (Confirmed in blocks 40–44) |
-| Frontend Usability | Navigation, UI components, Modals | **PASSED** (Requires API proxy alignment) |
-| Live Demonstration | Ready for presentation to audience | **NOT READY** (Follow Remediation Plan) |
+| Blockchain Integrity | Real EVM transactions, timestamps, hash matching | **PASSED** (Real on-chain transactions confirmed) |
+| Frontend Usability | Navigation, UI components, Modals | **PASSED** (Full end-to-end integration verified) |
+| Live Demonstration | Ready for presentation to audience | **READY FOR PRODUCTION / DEMO** |
 
 ---
-*Report compiled and certified by Quality Assurance Engineering.*
+
+## 7. Remediation & Bug Fix Verification Log
+
+All 10 identified defects and security vulnerabilities have been resolved, verified against the running Hardhat blockchain and Express/MongoDB backend, and committed to git:
+
+| Bug ID | Severity | Description | Commit | Resolution Status |
+|---|---|---|---|---|
+| **BUG-01** | **CRITICAL** | Port 5000 AirPlay collision breaking browser API calls | `5a106f9` | **RESOLVED**: Backend migrated to port 5001; Vite proxies `/api` and `/uploads` directly to `127.0.0.1:5001`. |
+| **BUG-02** | **CRITICAL** | Public unrestricted Administrator self-registration | `c6b7ca6` | **RESOLVED**: `authController.js` blocks `admin`/`administrator` role on register (403 Forbidden). Frontend UI updated. |
+| **BUG-03** | **CRITICAL** | Hardcoded demo token backdoor in auth middleware | `c6b7ca6` | **RESOLVED**: Removed unauthenticated `demo_token_` and `mock_` bypass from `middleware/auth.js`. Cryptographic JWT enforced. |
+| **BUG-04** | **HIGH** | Public document verification endpoint mismatch | `2762871` | **RESOLVED**: `blockchainController.js` supports fileHash-only lookup; `blockchainService.ts` calls `/api/blockchain/verify-file`. |
+| **BUG-05** | **HIGH** | Missing `/uploads` proxy in Vite dev server | `5a106f9` | **RESOLVED**: `/uploads` proxy added to `vite.config.ts` pointing to `http://127.0.0.1:5001`. Manuscript PDFs open directly. |
+| **BUG-06** | **HIGH** | Reverse version indexing displaying stale v1 | `53f9b54` | **RESOLVED**: `AuthorDashboard` & `AdminSubmissionsPage` find `paper.currentVersion`; `VersionHistoryModal` sorts descending. |
+| **BUG-07** | **MEDIUM** | Review hash schema mismatch between client and backend | `bcc9634` | **RESOLVED**: Frontend `calculateReviewHash` aligns with backend `HashService.hashReview` canonical schema. |
+| **BUG-08** | **MEDIUM** | Automatic login to mock author on fresh visits | `24b86d6` | **RESOLVED**: `AuthContext` initializes user and token to `null`, requiring explicit login or demo selection. |
+| **BUG-09** | **MEDIUM** | Seed credentials mismatch with frontend mock data | `24b86d6` | **RESOLVED**: `mockData.ts` and `LoginPage.tsx` synchronized with official database seed accounts and credentials. |
+| **BUG-10** | **LOW** | Missing Administrator button on quick-login bar | `24b86d6` | **RESOLVED**: Fast switch bar displays Author, Reviewer, and Admin profiles with genuine seed credentials. |
+
+---
+*Report certified and updated following complete remediation by Quality Assurance Engineering.*
