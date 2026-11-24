@@ -55,14 +55,19 @@ class ApiClient {
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     const url = `${this.baseUrl}${cleanEndpoint}`;
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
     try {
       const response = await fetch(url, {
         ...options,
+        signal: options.signal || controller.signal,
         headers: {
           ...this.getHeaders(isFormData),
           ...options.headers,
         },
       });
+      clearTimeout(timeoutId);
 
       const data = await response.json().catch(() => null);
 
@@ -80,8 +85,13 @@ class ApiClient {
 
       return data as T;
     } catch (err: any) {
-      // If network failed (e.g. backend server offline), we can signal fallback
-      if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+      clearTimeout(timeoutId);
+      // If network failed, aborted, or backend server offline, signal fallback
+      if (
+        err.name === 'AbortError' ||
+        err.message === 'Failed to fetch' ||
+        err.name === 'TypeError'
+      ) {
         throw new Error('BACKEND_UNAVAILABLE');
       }
       throw err;

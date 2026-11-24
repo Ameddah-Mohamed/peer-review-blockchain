@@ -26,7 +26,11 @@ exports.getOverview = async (req, res, next) => {
     let latestBlockNumber = 1;
     try {
       if (blockchainService.provider) {
-        latestBlockNumber = await blockchainService.provider.getBlockNumber();
+        const blockPromise = blockchainService.provider.getBlockNumber();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("RPC_TIMEOUT")), 2000)
+        );
+        latestBlockNumber = await Promise.race([blockPromise, timeoutPromise]);
       }
     } catch (e) {
       const lastTx = await BlockchainTransaction.findOne().sort({ blockNumber: -1 });

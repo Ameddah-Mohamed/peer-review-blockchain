@@ -35,7 +35,7 @@ class BlockchainService {
       const deploymentFile = path.join(__dirname, "../blockchain/deployedContract.json");
       if (fs.existsSync(deploymentFile)) {
         const deployment = JSON.parse(fs.readFileSync(deploymentFile, "utf8"));
-        this.contractAddress = process.env.CONTRACT_ADDRESS || deployment.address;
+        this.contractAddress = deployment.address || process.env.CONTRACT_ADDRESS;
         this.abi = deployment.abi;
       } else {
         const artifactPath = path.join(

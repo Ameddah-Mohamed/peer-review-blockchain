@@ -1,45 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../services/adminService';
 import { mockAdapter } from '../../services/mockAdapter';
+import { useAuth } from '../../context/AuthContext';
 import { ConferenceStats, BlockchainEvent, Paper } from '../../types';
-import { Card, CardHeader, CardBody } from '../../components/common/Card';
-import { LoadingSpinner } from '../../components/common/LoadingSpinner';
+import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
+import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { TxExplorerModal } from '../../components/blockchain/TxExplorerModal';
 import { formatDate } from '../../utils/formatters';
 import { Link } from 'react-router-dom';
 import {
   FileText,
   Users,
-  Award,
   ShieldCheck,
-  Blocks,
   ArrowRight,
   Cpu,
+  RefreshCw,
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
+  const { user } = useAuth();
   const [stats, setStats] = useState<ConferenceStats | null>(null);
   const [recentEvents, setRecentEvents] = useState<BlockchainEvent[]>([]);
   const [submissions, setSubmissions] = useState<Paper[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedProof, setSelectedProof] = useState<any>(null);
 
   useEffect(() => {
     loadOverviewData();
-  }, []);
+  }, [user]);
 
   const loadOverviewData = async () => {
     setIsLoading(true);
+    let resolved = false;
+
+    // Safety fallback timer ensures spinner NEVER gets stuck indefinitely
+    const safetyTimer = setTimeout(async () => {
+      if (!resolved) {
+        console.warn('AdminDashboard loadOverviewData timed out, falling back to mock state');
+        try {
+          const fallbackStats = await mockAdapter.getAdminStats();
+          const fallbackEvents = await mockAdapter.getAuditTrail();
+          const fallbackPapers = await mockAdapter.getAllSubmissions();
+          setStats(fallbackStats);
+          setRecentEvents(fallbackEvents.slice(0, 6));
+          setSubmissions(fallbackPapers);
+        } catch {}
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
+    }, 3500);
+
     try {
       const [overviewStats, events, papers] = await Promise.all([
         adminService.getOverview(),
         adminService.getAuditTrail(),
         adminService.getSubmissions(),
       ]);
-      setStats(overviewStats);
-      setRecentEvents(events.slice(0, 5));
-      setSubmissions(papers);
+      resolved = true;
+      clearTimeout(safetyTimer);
+      setStats(overviewStats || (await mockAdapter.getAdminStats()));
+      setRecentEvents(Array.isArray(events) ? events.slice(0, 6) : []);
+      setSubmissions(Array.isArray(papers) ? papers : []);
     } catch (err) {
       console.error('Failed to load admin stats, falling back to mock state:', err);
       try {
@@ -47,259 +70,322 @@ export const AdminDashboard: React.FC = () => {
         const fallbackEvents = await mockAdapter.getAuditTrail();
         const fallbackPapers = await mockAdapter.getAllSubmissions();
         setStats(fallbackStats);
-        setRecentEvents(fallbackEvents.slice(0, 5));
+        setRecentEvents(fallbackEvents.slice(0, 6));
         setSubmissions(fallbackPapers);
       } catch (mockErr) {
         console.error('Mock fallback error:', mockErr);
       }
     } finally {
+      resolved = true;
+      clearTimeout(safetyTimer);
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
-  if (isLoading) {
-    return <LoadingSpinner message="Loading conference analytics & blockchain state..." />;
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    loadOverviewData();
+  };
+
+  if (isLoading && !stats) {
+    return <LoadingSpinner message="Loading conference registry and blockchain state..." />;
   }
 
   if (!stats) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8 text-center space-y-4">
-        <p className="text-slate-600 text-sm">Unable to load conference statistics.</p>
-        <button
-          onClick={loadOverviewData}
-          className="px-4 py-2 bg-brand-600 text-white text-xs font-semibold rounded-lg hover:bg-brand-700 transition-colors"
-        >
-          Retry
-        </button>
+      <div className="max-w-7xl mx-auto px-4 py-16 text-center space-y-4">
+        <p className="text-slate-600 text-sm">Unable to load conference records.</p>
+        <Button variant="secondary" size="sm" onClick={loadOverviewData}>
+          Retry Connection
+        </Button>
       </div>
     );
   }
 
+  const reviewCompletionRate = stats.totalReviewsExpected
+    ? Math.round((stats.totalReviewsCompleted / stats.totalReviewsExpected) * 100)
+    : 0;
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-purple-950 to-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* Editorial Header */}
+      <div className="border-b border-slate-200 pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 bg-purple-500/20 px-3 py-1 rounded-full text-xs font-medium text-purple-300 mb-2 border border-purple-500/30 backdrop-blur-sm">
-              <Blocks className="w-3.5 h-3.5 text-purple-400" />
-              <span>Smart Contract Verified • Block Height: #{stats.latestBlockNumber}</span>
+            <div className="flex items-center gap-2 text-xs font-mono text-slate-500 mb-1">
+              <span>ICDS 2026</span>
+              <span>/</span>
+              <span>Program Committee</span>
+              <span>/</span>
+              <span className="text-slate-800 font-medium">Administration</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-              Conference Administration & Governance
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+              Conference Governance
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mt-1 leading-relaxed">
-              Real-time oversight of manuscript submissions, double-blind committee assignments,
-              review completion rates, and tamper-evident blockchain audit events.
+            <p className="text-xs text-slate-500 mt-1">
+              International Conference on Decentralized Systems • Editorial monitoring, committee allocations, and cryptographic audit proofs.
             </p>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <Link
-              to="/admin/submissions"
-              className="px-4 py-2 bg-white text-slate-900 hover:bg-slate-100 text-xs font-semibold rounded-lg shadow-sm transition-all"
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              isLoading={isRefreshing}
+              leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />}
             >
-              Manage Papers
+              Refresh
+            </Button>
+            <Link to="/admin/submissions">
+              <Button variant="secondary" size="sm">
+                Manage Submissions
+              </Button>
             </Link>
-            <Link
-              to="/admin/audit"
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-all"
-            >
-              Audit Ledger
+            <Link to="/admin/audit">
+              <Button variant="primary" size="sm">
+                Audit Ledger
+              </Button>
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider">Total Submissions</span>
-            <FileText className="w-4 h-4 text-brand-600" />
+      {/* Understated Metrics Strip */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 border-b border-slate-200 pb-8">
+        <div className="bg-white p-4 rounded-lg border border-slate-200">
+          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            Total Submissions
           </div>
-          <div className="text-2xl font-bold text-slate-900">{stats.totalPapers}</div>
-          <div className="text-[11px] text-slate-400 mt-1 flex items-center gap-1.5">
-            <span className="text-emerald-600 font-semibold">{stats.accepted} accepted</span>
-            <span>•</span>
-            <span className="text-blue-600 font-semibold">{stats.underReview} reviewing</span>
+          <div className="text-2xl font-bold text-slate-900 tracking-tight mt-1 tabular-nums">
+            {stats.totalPapers}
           </div>
-        </Card>
+          <div className="text-[11px] text-slate-500 mt-0.5">
+            {stats.underReview} under review
+          </div>
+        </div>
 
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider">Review Committee</span>
-            <Users className="w-4 h-4 text-emerald-600" />
+        <div className="bg-white p-4 rounded-lg border border-slate-200">
+          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            Accepted Papers
           </div>
-          <div className="text-2xl font-bold text-slate-900">{stats.totalReviewers}</div>
-          <div className="text-[11px] text-slate-400 mt-1">
+          <div className="text-2xl font-bold text-slate-900 tracking-tight mt-1 tabular-nums">
+            {stats.accepted}
+          </div>
+          <div className="text-[11px] text-emerald-700 mt-0.5 font-medium">
+            {stats.totalPapers ? Math.round((stats.accepted / stats.totalPapers) * 100) : 0}% acceptance rate
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-lg border border-slate-200">
+          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            Review Progress
+          </div>
+          <div className="text-2xl font-bold text-slate-900 tracking-tight mt-1 tabular-nums">
+            {stats.totalReviewsCompleted} <span className="text-xs font-normal text-slate-400">/ {stats.totalReviewsExpected}</span>
+          </div>
+          <div className="text-[11px] text-slate-500 mt-0.5">
+            {reviewCompletionRate}% completed
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-lg border border-slate-200">
+          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            Review Committee
+          </div>
+          <div className="text-2xl font-bold text-slate-900 tracking-tight mt-1 tabular-nums">
+            {stats.totalReviewers}
+          </div>
+          <div className="text-[11px] text-slate-500 mt-0.5">
             {stats.totalAuthors} registered authors
           </div>
-        </Card>
+        </div>
 
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider">Reviews Progress</span>
-            <Award className="w-4 h-4 text-amber-600" />
+        <div className="bg-white p-4 rounded-lg border border-slate-200 col-span-2 lg:col-span-1">
+          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+            <span>Ledger Proofs</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Connected to EVM node" />
           </div>
-          <div className="text-2xl font-bold text-slate-900">
-            {stats.totalReviewsCompleted} / {stats.totalReviewsExpected}
+          <div className="text-2xl font-bold text-slate-900 tracking-tight mt-1 tabular-nums">
+            {stats.blockchainEventsCount}
           </div>
-          <div className="text-[11px] text-emerald-600 font-semibold mt-1">
-            {Math.round((stats.totalReviewsCompleted / Math.max(stats.totalReviewsExpected, 1)) * 100)}%
-            completion rate
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-xs font-semibold uppercase tracking-wider">Blockchain Proofs</span>
-            <Blocks className="w-4 h-4 text-purple-600" />
-          </div>
-          <div className="text-2xl font-bold text-slate-900">{stats.blockchainEventsCount}</div>
-          <div className="text-[11px] text-purple-600 font-mono mt-1 flex items-center gap-1">
-            <Cpu className="w-3 h-3" />
+          <div className="text-[11px] font-mono text-slate-500 mt-0.5 flex items-center gap-1">
+            <Cpu className="w-3 h-3 text-slate-400" />
             <span>Block #{stats.latestBlockNumber}</span>
           </div>
-        </Card>
+        </div>
       </div>
 
-      {/* Main Sections Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Recent Submissions Overview (2 spans) */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader
-              title="Recent Submissions"
-              description="Overview of conference papers and current evaluation stage"
-              action={
-                <Link
-                  to="/admin/submissions"
-                  className="text-xs font-semibold text-brand-600 hover:text-brand-800 flex items-center gap-1"
-                >
-                  View all ({submissions.length}) <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              }
-            />
-
-            <CardBody className="p-0">
-              <div className="divide-y divide-slate-100">
-                {submissions.slice(0, 4).map((paper) => (
-                  <div key={paper.id} className="p-4 hover:bg-slate-50/50 transition-colors flex items-center justify-between gap-3">
-                    <div className="space-y-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-[11px] bg-slate-100 text-slate-700 px-1.5 py-0.2 rounded font-semibold">
-                          {paper.id}
-                        </span>
-                        <Badge status={paper.status} size="sm" />
-                        <span className="font-mono text-[11px] text-slate-400">
-                          {paper.authorPseudonym}
-                        </span>
-                      </div>
-                      <h4 className="text-xs sm:text-sm font-semibold text-slate-900 truncate">
-                        {paper.title}
-                      </h4>
-                    </div>
-
-                    <div className="text-right shrink-0">
-                      <span className="text-[11px] text-slate-500 block">
-                        {paper.completedReviewCount || 0} / {paper.assignedReviewerCount || 0} reviews
-                      </span>
-                      <span className="text-[10px] text-slate-400">
-                        {formatDate(paper.versions[0]?.submittedAt)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardBody>
-          </Card>
-
-          {/* Quick Action Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Main Content Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* Left Column: Recent Submissions (2 cols) */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
+              Recent Submissions
+            </h2>
             <Link
               to="/admin/submissions"
-              className="p-5 bg-white rounded-xl border border-slate-200 hover:border-brand-500 hover:shadow-sm transition-all group block"
+              className="text-xs font-medium text-slate-600 hover:text-slate-900 inline-flex items-center gap-1 transition-colors"
             >
-              <FileText className="w-6 h-6 text-brand-600 mb-2 group-hover:scale-110 transition-transform" />
-              <h4 className="text-sm font-semibold text-slate-900">Manage Submissions & Assign</h4>
+              <span>View all ({submissions.length})</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="academic-table">
+                <thead>
+                  <tr>
+                    <th className="w-24">ID</th>
+                    <th>Title & Track</th>
+                    <th>Author</th>
+                    <th>Status</th>
+                    <th>Reviews</th>
+                    <th className="text-right">Submitted</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {submissions.slice(0, 6).map((paper) => {
+                    const latestVer =
+                      paper.versions?.find((v) => v.version === paper.currentVersion) ||
+                      paper.versions?.[0];
+                    return (
+                      <tr key={paper.id}>
+                        <td className="font-mono text-xs font-medium text-slate-600 whitespace-nowrap">
+                          {paper.id}
+                        </td>
+                        <td>
+                          <div className="font-medium text-slate-900 text-xs truncate max-w-xs" title={paper.title}>
+                            {paper.title}
+                          </div>
+                          <div className="text-[11px] text-slate-400 mt-0.5">
+                            {paper.track}
+                          </div>
+                        </td>
+                        <td className="font-mono text-xs text-slate-600 whitespace-nowrap">
+                          {paper.authorPseudonym}
+                        </td>
+                        <td className="whitespace-nowrap">
+                          <Badge status={paper.status} size="xs" />
+                        </td>
+                        <td className="text-xs text-slate-600 whitespace-nowrap tabular-nums">
+                          {paper.completedReviewCount || 0} / {paper.assignedReviewerCount || 0}
+                        </td>
+                        <td className="text-right text-xs text-slate-400 whitespace-nowrap tabular-nums">
+                          {formatDate(latestVer?.submittedAt)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {submissions.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-slate-400 text-xs">
+                        No submissions recorded yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Quick Access Tiles */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <Link
+              to="/admin/submissions"
+              className="p-4 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors block group"
+            >
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-slate-500" />
+                  <span>Assign Reviewers & Record Decisions</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+              </div>
               <p className="text-xs text-slate-500 mt-1">
-                Allocate expert reviewers, enforce double-blind standards, and monitor feedback.
+                Allocate committee members, verify double-blind anonymity, and seal editorial decisions.
               </p>
             </Link>
 
             <Link
               to="/admin/users"
-              className="p-5 bg-white rounded-xl border border-slate-200 hover:border-emerald-500 hover:shadow-sm transition-all group block"
+              className="p-4 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition-colors block group"
             >
-              <Users className="w-6 h-6 text-emerald-600 mb-2 group-hover:scale-110 transition-transform" />
-              <h4 className="text-sm font-semibold text-slate-900">Manage Users & Permissions</h4>
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-slate-500" />
+                  <span>Reviewer Committee Directory</span>
+                </div>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+              </div>
               <p className="text-xs text-slate-500 mt-1">
-                View participant pseudonyms, institutional affiliations, and assign committee roles.
+                Inspect institutional affiliations, reviewer expertise, and participant pseudonyms.
               </p>
             </Link>
           </div>
         </div>
 
-        {/* Right Column: Immutable Audit Ledger Stream */}
-        <div>
-          <Card className="h-full">
-            <CardHeader
-              title={
-                <div className="flex items-center gap-1.5 text-purple-900">
-                  <ShieldCheck className="w-4 h-4 text-purple-600" />
-                  <span>Blockchain Activity</span>
+        {/* Right Column: Live Blockchain Activity (1 col) */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
+                Ledger Activity
+              </h2>
+            </div>
+            <Link
+              to="/admin/audit"
+              className="text-xs font-medium text-slate-600 hover:text-slate-900 inline-flex items-center gap-1 transition-colors"
+            >
+              <span>Full Audit Trail</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          <div className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-100">
+            {recentEvents.map((evt) => (
+              <div
+                key={evt.id}
+                onClick={() =>
+                  setSelectedProof({
+                    paperId: evt.paperId,
+                    version: evt.version,
+                    fileHash: evt.dataHash,
+                    txHash: evt.txHash,
+                    blockNumber: evt.blockNumber,
+                    submittedAt: evt.timestamp,
+                    actorPseudonym: evt.actorPseudonym,
+                  })
+                }
+                className="p-3 hover:bg-slate-50 transition-colors cursor-pointer space-y-1.5 group"
+              >
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-semibold text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                    {evt.eventType}
+                  </span>
+                  <span className="font-mono text-slate-400 tabular-nums">#{evt.blockNumber}</span>
                 </div>
-              }
-              description="Recent on-chain state commits"
-              action={
-                <Link
-                  to="/admin/audit"
-                  className="text-xs font-semibold text-purple-700 hover:text-purple-900"
-                >
-                  Full Trail
-                </Link>
-              }
-            />
 
-            <CardBody className="p-0">
-              <div className="divide-y divide-slate-100">
-                {recentEvents.map((evt) => (
-                  <div
-                    key={evt.id}
-                    onClick={() =>
-                      setSelectedProof({
-                        paperId: evt.paperId,
-                        version: evt.version,
-                        fileHash: evt.dataHash,
-                        txHash: evt.txHash,
-                        blockNumber: evt.blockNumber,
-                        submittedAt: evt.timestamp,
-                        actorPseudonym: evt.actorPseudonym,
-                      })
-                    }
-                    className="p-3.5 hover:bg-purple-50/40 transition-colors cursor-pointer space-y-1.5"
-                  >
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-semibold text-purple-800 bg-purple-100/70 px-2 py-0.5 rounded-full">
-                        {evt.eventType}
-                      </span>
-                      <span className="font-mono text-slate-400">#{evt.blockNumber}</span>
-                    </div>
+                <div className="text-xs font-medium text-slate-800 truncate">
+                  Paper: {evt.paperId} {evt.version ? `(v${evt.version})` : ''}
+                </div>
 
-                    <div className="text-xs font-medium text-slate-700 truncate">
-                      Target: {evt.paperId} {evt.version ? `(v${evt.version})` : ''}
-                    </div>
-
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
-                      <span>Signer: {evt.actorPseudonym}</span>
-                      <span>{formatDate(evt.timestamp)}</span>
-                    </div>
-                  </div>
-                ))}
+                <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
+                  <span>Signer: {evt.actorPseudonym}</span>
+                  <span className="tabular-nums">{formatDate(evt.timestamp)}</span>
+                </div>
               </div>
-            </CardBody>
-          </Card>
+            ))}
+            {recentEvents.length === 0 && (
+              <div className="p-6 text-center text-xs text-slate-400">
+                No on-chain events recorded yet.
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

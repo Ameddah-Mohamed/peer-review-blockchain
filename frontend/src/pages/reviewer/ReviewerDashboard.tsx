@@ -3,7 +3,6 @@ import { useAuth } from '../../context/AuthContext';
 import { reviewService } from '../../services/reviewService';
 import { ReviewAssignment, Review } from '../../types';
 import { Button } from '../../components/common/Button';
-import { Card, CardHeader, CardBody } from '../../components/common/Card';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { BlockchainBadge } from '../../components/blockchain/BlockchainBadge';
@@ -14,18 +13,20 @@ import { TxExplorerModal } from '../../components/blockchain/TxExplorerModal';
 import { formatDate } from '../../utils/formatters';
 import {
   FileText,
-  CheckCircle2,
   Clock,
   Eye,
   Award,
   Calendar,
-  Lock,
+  RefreshCw,
+  ExternalLink,
 } from 'lucide-react';
 
 export const ReviewerDashboard: React.FC = () => {
   const { user } = useAuth();
   const [assignments, setAssignments] = useState<ReviewAssignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'pending' | 'completed'>('pending');
 
   // Modals state
   const [selectedForReview, setSelectedForReview] = useState<ReviewAssignment | null>(null);
@@ -44,12 +45,18 @@ export const ReviewerDashboard: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await reviewService.getAssignedPapers(user);
-      setAssignments(data);
+      setAssignments(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load assignments:', err);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    loadAssignedReviews();
   };
 
   const pendingAssignments = assignments.filter((a) => a.reviewStatus === 'pending');
@@ -57,234 +64,266 @@ export const ReviewerDashboard: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Header */}
+      <div className="border-b border-slate-200 pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 bg-emerald-500/20 px-3 py-1 rounded-full text-xs font-medium text-emerald-300 mb-2 border border-emerald-500/30 backdrop-blur-sm">
-              <Lock className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Strict Double-Blind Peer Review • Reviewer: {user?.pseudonymId}</span>
+            <div className="flex items-center gap-2 text-xs font-mono text-slate-500 mb-1">
+              <span>Program Committee</span>
+              <span>/</span>
+              <span>Reviewer: <strong className="text-slate-700">{user?.pseudonymId}</strong></span>
+              <span>/</span>
+              <span>Assigned Workload</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900">
               Peer Review Committee Portal
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mt-1 leading-relaxed">
-              Evaluate assigned research manuscripts. Author identities are completely shielded behind
-              cryptographic pseudonyms to ensure unbiased scientific evaluation.
+            <p className="text-xs text-slate-500 mt-1">
+              Double-blind manuscript evaluation. Author real names and institutional affiliations are cryptographically blinded.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="text-right">
-              <span className="text-[11px] text-slate-400 block">Assigned Workload</span>
-              <span className="text-lg font-bold text-white">
-                {completedAssignments.length} / {assignments.length} Completed
-              </span>
-            </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              isLoading={isRefreshing}
+              leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />}
+            >
+              Refresh
+            </Button>
           </div>
         </div>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="p-4">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1">
-            Total Assigned
-          </span>
-          <div className="text-2xl font-bold text-slate-900">{assignments.length}</div>
-          <span className="text-[11px] text-slate-400 mt-1 block">Allocated by Conference Chairs</span>
-        </Card>
+      {/* Understated Metrics Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 border-b border-slate-200 pb-6">
+        <div className="bg-white p-3.5 rounded-lg border border-slate-200">
+          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+            Total Allocated
+          </div>
+          <div className="text-2xl font-bold text-slate-900 mt-1 tabular-nums">
+            {assignments.length}
+          </div>
+          <div className="text-[11px] text-slate-400 mt-0.5">Assigned by committee chairs</div>
+        </div>
 
-        <Card className="p-4">
-          <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider block mb-1">
+        <div className="bg-white p-3.5 rounded-lg border border-slate-200">
+          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
             Pending Evaluations
-          </span>
-          <div className="text-2xl font-bold text-amber-700">{pendingAssignments.length}</div>
-          <span className="text-[11px] text-amber-500/80 mt-1 block">Awaiting your feedback</span>
-        </Card>
+          </div>
+          <div className="text-2xl font-bold text-amber-700 mt-1 tabular-nums">
+            {pendingAssignments.length}
+          </div>
+          <div className="text-[11px] text-amber-600/80 mt-0.5">Awaiting evaluation & score</div>
+        </div>
 
-        <Card className="p-4">
-          <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider block mb-1">
+        <div className="bg-white p-3.5 rounded-lg border border-slate-200 col-span-2 sm:col-span-1">
+          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
             Completed & Sealed
-          </span>
-          <div className="text-2xl font-bold text-emerald-700">{completedAssignments.length}</div>
-          <span className="text-[11px] text-emerald-500/80 mt-1 block">Proof committed to ledger</span>
-        </Card>
+          </div>
+          <div className="text-2xl font-bold text-emerald-700 mt-1 tabular-nums">
+            {completedAssignments.length}
+          </div>
+          <div className="text-[11px] text-emerald-600/80 mt-0.5">Anchored on distributed ledger</div>
+        </div>
       </div>
 
-      {/* Pending Reviews Section */}
-      <Card>
-        <CardHeader
-          title={
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-amber-600" />
-              <span>Pending Reviews ({pendingAssignments.length})</span>
-            </div>
-          }
-          description="Manuscripts requiring your score and scientific feedback"
-        />
+      {/* Tabs Toolbar */}
+      <div className="flex items-center justify-between border-b border-slate-200">
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setActiveTab('pending')}
+            className={`pb-3 text-xs font-semibold tracking-tight transition-colors border-b-2 flex items-center gap-1.5 ${
+              activeTab === 'pending'
+                ? 'border-slate-900 text-slate-900'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>Pending Evaluations</span>
+            <span className="font-mono text-[10px] bg-slate-100 px-1.5 py-0.2 rounded text-slate-600">
+              {pendingAssignments.length}
+            </span>
+          </button>
 
-        <CardBody className="p-0">
-          {isLoading ? (
-            <LoadingSpinner message="Loading assigned manuscripts..." />
-          ) : pendingAssignments.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-500">
-              <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-              <p className="font-semibold text-slate-700">No pending reviews!</p>
-              <p className="text-slate-400 mt-0.5">You have completed all current evaluations.</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {pendingAssignments.map((asg) => (
+          <button
+            type="button"
+            onClick={() => setActiveTab('completed')}
+            className={`pb-3 text-xs font-semibold tracking-tight transition-colors border-b-2 flex items-center gap-1.5 ${
+              activeTab === 'completed'
+                ? 'border-slate-900 text-slate-900'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Award className="w-3.5 h-3.5" />
+            <span>Completed History</span>
+            <span className="font-mono text-[10px] bg-slate-100 px-1.5 py-0.2 rounded text-slate-600">
+              {completedAssignments.length}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      {isLoading ? (
+        <div className="py-12 bg-white rounded-lg border border-slate-200">
+          <LoadingSpinner message="Loading assigned manuscripts..." />
+        </div>
+      ) : activeTab === 'pending' ? (
+        pendingAssignments.length === 0 ? (
+          <div className="bg-white rounded-lg border border-slate-200 p-8 text-center">
+            <h3 className="text-sm font-semibold text-slate-800">All pending evaluations completed</h3>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              You have evaluated all current assigned manuscripts. Any new allocations from conference chairs will appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-100 shadow-2xs">
+            {pendingAssignments.map((asg) => (
+              <div key={asg.id} className="p-5 sm:p-6 hover:bg-slate-50/50 transition-colors space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold border border-slate-200">
+                        {asg.paperId}
+                      </span>
+                      <span className="text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                        {asg.track}
+                      </span>
+                      <span className="font-mono text-xs bg-slate-50 text-slate-600 px-2 py-0.5 rounded border border-slate-200">
+                        Author: {asg.authorPseudonym}
+                      </span>
+                      <span className="text-xs font-mono text-slate-400">
+                        v{asg.currentVersion}
+                      </span>
+                    </div>
+                    <h3 className="text-base font-semibold text-slate-900 pt-1 leading-snug">
+                      {asg.title}
+                    </h3>
+                  </div>
+
+                  <div className="shrink-0 flex items-center gap-2">
+                    <Button
+                      variant="primary"
+                      size="xs"
+                      onClick={() => setSelectedForReview(asg)}
+                      leftIcon={<Award className="w-3.5 h-3.5" />}
+                    >
+                      Submit Review
+                    </Button>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
+                  {asg.abstract}
+                </p>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs text-slate-500">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <span className="flex items-center gap-1 tabular-nums">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                      Deadline: {formatDate(asg.deadline)}
+                    </span>
+                    <span>•</span>
+                    <div className="inline-flex items-center gap-1.5">
+                      <span className="text-slate-400 font-mono text-[10px]">SHA-256:</span>
+                      <HashViewer hash={asg.fileHash} type="fileHash" head={6} tail={4} />
+                    </div>
+                  </div>
+
+                  <a
+                    href={asg.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-semibold text-slate-700 hover:text-slate-900 inline-flex items-center gap-1 transition-colors"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-slate-400" />
+                    <span>View Manuscript (PDF)</span>
+                    <ExternalLink className="w-3 h-3 text-slate-300" />
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : (
+        completedAssignments.length === 0 ? (
+          <div className="bg-white rounded-lg border border-slate-200 p-8 text-center text-xs text-slate-400">
+            No completed reviews recorded yet.
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg border border-slate-200 divide-y divide-slate-100 shadow-2xs">
+            {completedAssignments.map((asg) => {
+              const review = asg.review;
+              if (!review) return null;
+
+              return (
                 <div key={asg.id} className="p-5 sm:p-6 hover:bg-slate-50/50 transition-colors space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
                         <span className="font-mono text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold border border-slate-200">
                           {asg.paperId}
                         </span>
-                        <span className="text-xs font-medium text-brand-600 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+                        <span className="text-xs text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                           {asg.track}
                         </span>
-                        <span className="font-mono text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded border border-purple-200">
-                          Author: {asg.authorPseudonym}
-                        </span>
+                        <Badge recommendation={review.recommendation} size="xs" />
                       </div>
-                      <h3 className="text-base font-semibold text-slate-900 pt-1">{asg.title}</h3>
+                      <h4 className="text-sm font-semibold text-slate-900">{asg.title}</h4>
                     </div>
 
-                    <div className="shrink-0">
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => setSelectedForReview(asg)}
-                        leftIcon={<Award className="w-4 h-4" />}
-                      >
-                        Submit Review
-                      </Button>
+                    <div className="shrink-0 flex items-center gap-2">
+                      <BlockchainBadge
+                        size="xs"
+                        verified={review.verified}
+                        blockNumber={review.blockNumber}
+                        onClick={() =>
+                          setSelectedProofRecord({
+                            paperId: asg.paperId,
+                            fileHash: review.reviewHash,
+                            txHash: review.blockchainTxHash,
+                            blockNumber: review.blockNumber,
+                            submittedAt: review.submittedAt,
+                            actorPseudonym: review.reviewerPseudonym,
+                          })
+                        }
+                      />
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">
-                    {asg.abstract}
+                  {/* Feedback preview */}
+                  <p className="text-xs text-slate-600 bg-slate-50/70 p-3 rounded border border-slate-200 line-clamp-2 italic">
+                    "{review.authorComments}"
                   </p>
 
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs text-slate-500">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        Deadline: {formatDate(asg.deadline)}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
+                    <div className="flex items-center gap-3 text-slate-500 tabular-nums">
+                      <span className="font-semibold text-slate-800">
+                        Score: {review.overallScore.toFixed(1)} / 5.0
                       </span>
-                      <span>Version: v{asg.currentVersion}</span>
-                      <span className="text-slate-400">Document Hash:</span>
-                      <HashViewer hash={asg.fileHash} type="fileHash" head={8} tail={6} />
+                      <span>•</span>
+                      <span>Sealed: {formatDate(review.submittedAt)}</span>
                     </div>
 
-                    <a
-                      href={asg.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-semibold text-brand-600 hover:text-brand-800 flex items-center gap-1"
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={() => setSelectedReviewToView({ review, title: asg.title })}
+                      leftIcon={<Eye className="w-3 h-3 text-slate-400" />}
                     >
-                      <FileText className="w-3.5 h-3.5" />
-                      View Manuscript
-                    </a>
+                      View Sealed Evaluation
+                    </Button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardBody>
-      </Card>
-
-      {/* Completed Reviews History */}
-      <Card>
-        <CardHeader
-          title={
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              <span>Review History & Integrity Proofs ({completedAssignments.length})</span>
-            </div>
-          }
-          description="Reviews signed and anchored on the blockchain ledger"
-        />
-
-        <CardBody className="p-0">
-          {completedAssignments.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-400">
-              No completed reviews submitted yet.
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {completedAssignments.map((asg) => {
-                const review = asg.review;
-                if (!review) return null;
-                return (
-                  <div
-                    key={asg.id}
-                    className="p-5 sm:p-6 hover:bg-slate-50/50 transition-colors space-y-3"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <span className="font-mono text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold border border-slate-200">
-                            {asg.paperId}
-                          </span>
-                          <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
-                            {asg.track}
-                          </span>
-                          <Badge recommendation={review.recommendation} />
-                        </div>
-                        <h4 className="text-sm font-semibold text-slate-900">{asg.title}</h4>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <BlockchainBadge
-                          verified={review.verified}
-                          blockNumber={review.blockNumber}
-                          onClick={() =>
-                            setSelectedProofRecord({
-                              paperId: asg.paperId,
-                              fileHash: review.reviewHash,
-                              txHash: review.blockchainTxHash,
-                              blockNumber: review.blockNumber,
-                              submittedAt: review.submittedAt,
-                              actorPseudonym: review.reviewerPseudonym,
-                            })
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    {/* Feedback summary */}
-                    <p className="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200 line-clamp-2 italic">
-                      "{review.authorComments}"
-                    </p>
-
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
-                      <div className="flex items-center gap-3 text-slate-500">
-                        <span className="font-semibold text-slate-800">
-                          Score: {review.overallScore.toFixed(1)} / 5.0
-                        </span>
-                        <span>Sealed: {formatDate(review.submittedAt)}</span>
-                      </div>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedReviewToView({ review, title: asg.title })}
-                        leftIcon={<Eye className="w-3.5 h-3.5" />}
-                      >
-                        View Full Review Record
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardBody>
-      </Card>
+              );
+            })}
+          </div>
+        )
+      )}
 
       {/* Modals */}
       <SubmitReviewModal
