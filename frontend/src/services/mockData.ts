@@ -2,6 +2,15 @@ import { User, Paper, ReviewAssignment, ConferenceStats, BlockchainEvent } from 
 
 export const MOCK_USERS: User[] = [
   {
+    id: 'usr_author_0',
+    name: 'Alice Johnson',
+    email: 'alice.student@university.edu',
+    role: 'author',
+    pseudonymId: 'AUTH-2DE621',
+    affiliation: 'School of Computing, State University',
+    createdAt: '2026-11-10T09:00:00.000Z',
+  },
+  {
     id: 'usr_author_1',
     name: 'Alice Chen',
     email: 'alice.chen@university.edu',
@@ -20,6 +29,15 @@ export const MOCK_USERS: User[] = [
     createdAt: '2026-11-12T11:30:00.000Z',
   },
   {
+    id: 'usr_rev_0',
+    name: 'Prof. Arthur Smith',
+    email: 'prof.smith@university.edu',
+    role: 'reviewer',
+    pseudonymId: 'REV-0EBCE8',
+    affiliation: 'Department of Distributed Systems',
+    createdAt: '2026-10-15T08:00:00.000Z',
+  },
+  {
     id: 'usr_rev_1',
     name: 'Prof. David Miller',
     email: 'david.miller@polytech.edu',
@@ -31,11 +49,20 @@ export const MOCK_USERS: User[] = [
   {
     id: 'usr_rev_2',
     name: 'Dr. Elena Rostova',
-    email: 'elena.rostova@acm.org',
+    email: 'dr.elena@research.org',
     role: 'reviewer',
-    pseudonymId: 'REV-2D4487',
+    pseudonymId: 'REV-7183D2',
     affiliation: 'Cryptography & Blockchain Institute',
     createdAt: '2026-10-18T14:15:00.000Z',
+  },
+  {
+    id: 'usr_admin_0',
+    name: 'Conference Chair (Admin)',
+    email: 'admin@conference.edu',
+    role: 'admin',
+    pseudonymId: 'ADM-342DC4',
+    affiliation: 'ICDS Program Committee',
+    createdAt: '2026-10-01T00:00:00.000Z',
   },
   {
     id: 'usr_admin_1',

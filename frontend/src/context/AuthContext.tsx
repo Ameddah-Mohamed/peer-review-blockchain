@@ -9,16 +9,16 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   role: UserRole | null;
-  login: (email: string, pass: string) => Promise<void>;
+  login: (email: string, pass: string) => Promise<User>;
   register: (data: {
     name: string;
     email: string;
     password: string;
     role: UserRole;
     affiliation?: string;
-  }) => Promise<void>;
+  }) => Promise<User>;
   logout: () => void;
-  switchDemoUser: (role: UserRole) => void;
+  switchDemoUser: (role: UserRole) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,12 +36,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return null;
       }
     }
-    // Default to the first author user so reviewer/author is instantly testable
-    return MOCK_USERS[0];
+    return null;
   });
 
   const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem(TOKEN_KEY) || 'mock_jwt_token_initial';
+    return localStorage.getItem(TOKEN_KEY) || null;
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -62,12 +61,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [token]);
 
-  const login = async (email: string, pass: string) => {
+  const login = async (email: string, pass: string): Promise<User> => {
     setIsLoading(true);
     try {
       const { token: receivedToken, user: receivedUser } = await authService.login(email, pass);
       setToken(receivedToken);
       setUser(receivedUser);
+      return receivedUser;
     } finally {
       setIsLoading(false);
     }
@@ -79,12 +79,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     password: string;
     role: UserRole;
     affiliation?: string;
-  }) => {
+  }): Promise<User> => {
     setIsLoading(true);
     try {
       const { token: receivedToken, user: receivedUser } = await authService.register(data);
       setToken(receivedToken);
       setUser(receivedUser);
+      return receivedUser;
     } finally {
       setIsLoading(false);
     }
@@ -97,13 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem(USER_KEY);
   };
 
-  const switchDemoUser = async (targetRole: UserRole) => {
-    const demoUser = MOCK_USERS.find((u) => u.role === targetRole);
-    if (demoUser) {
-      setUser(demoUser);
-      setToken(`demo_token_${demoUser.id}`);
-    }
-
+  const switchDemoUser = async (targetRole: UserRole): Promise<void> => {
     const demoCreds: Record<UserRole, { email: string; pass: string }> = {
       admin: { email: 'admin@conference.edu', pass: 'AdminPassword123!' },
       reviewer: { email: 'prof.smith@university.edu', pass: 'ReviewerPassword123!' },
@@ -112,12 +107,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const cred = demoCreds[targetRole];
     if (cred) {
+      setIsLoading(true);
       try {
         const { token: realToken, user: realUser } = await authService.login(cred.email, cred.pass);
         setToken(realToken);
         setUser(realUser);
       } catch (err) {
-        // Keeps demo token fallback
+        console.warn('Real demo login failed, falling back to mock user representation:', err);
+        const demoUser = MOCK_USERS.find((u) => u.role === targetRole);
+        if (demoUser) {
+          setUser(demoUser);
+          setToken(`demo_token_${demoUser.id}`);
+        }
+      } finally {
+        setIsLoading(false);
       }
     }
   };

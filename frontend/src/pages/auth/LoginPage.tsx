@@ -4,10 +4,45 @@ import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { Button } from '../../components/common/Button';
 import { FileText, Shield, ArrowRight, Lock, Mail } from 'lucide-react';
-import { MOCK_USERS } from '../../services/mockData';
+
+interface DemoProfile {
+  role: 'author' | 'reviewer' | 'admin';
+  label: string;
+  name: string;
+  email: string;
+  password: string;
+  pseudonym: string;
+}
+
+const DEMO_PROFILES: DemoProfile[] = [
+  {
+    role: 'author',
+    label: 'Author',
+    name: 'Alice Johnson',
+    email: 'alice.student@university.edu',
+    password: 'AuthorPassword123!',
+    pseudonym: 'AUTH-2DE621',
+  },
+  {
+    role: 'reviewer',
+    label: 'Reviewer',
+    name: 'Prof. Arthur Smith',
+    email: 'prof.smith@university.edu',
+    password: 'ReviewerPassword123!',
+    pseudonym: 'REV-0EBCE8',
+  },
+  {
+    role: 'admin',
+    label: 'Admin',
+    name: 'Conference Chair',
+    email: 'admin@conference.edu',
+    password: 'AdminPassword123!',
+    pseudonym: 'ADM-342DC4',
+  },
+];
 
 export const LoginPage: React.FC = () => {
-  const { login, switchDemoUser } = useAuth();
+  const { login } = useAuth();
   const { showToast } = useNotification();
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,18 +62,16 @@ export const LoginPage: React.FC = () => {
 
     setIsLoading(true);
     try {
-      await login(email, password);
+      const loggedInUser = await login(email, password);
       showToast('success', 'Welcome Back', 'Successfully authenticated.');
 
-      // Redirect based on destination or default to role
-      const matched = MOCK_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase());
-      if (from !== '/') {
+      if (from && from !== '/') {
         navigate(from, { replace: true });
-      } else if (matched?.role === 'author') {
+      } else if (loggedInUser?.role === 'author') {
         navigate('/author', { replace: true });
-      } else if (matched?.role === 'reviewer') {
+      } else if (loggedInUser?.role === 'reviewer') {
         navigate('/reviewer', { replace: true });
-      } else if (matched?.role === 'admin') {
+      } else if (loggedInUser?.role === 'admin') {
         navigate('/admin', { replace: true });
       } else {
         navigate('/author', { replace: true });
@@ -50,14 +83,27 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleQuickDemo = (userItem: (typeof MOCK_USERS)[0]) => {
-    setEmail(userItem.email);
-    setPassword('demo123456');
-    switchDemoUser(userItem.role);
-    showToast('info', 'Demo Profile Active', `Switched to ${userItem.name} (${userItem.role})`);
-    if (userItem.role === 'author') navigate('/author');
-    else if (userItem.role === 'reviewer') navigate('/reviewer');
-    else if (userItem.role === 'admin') navigate('/admin');
+  const handleQuickDemo = async (profile: DemoProfile) => {
+    setEmail(profile.email);
+    setPassword(profile.password);
+    setIsLoading(true);
+    try {
+      const loggedInUser = await login(profile.email, profile.password);
+      showToast('info', 'Demo Profile Active', `Signed in as ${profile.name} (${profile.label})`);
+      if (from && from !== '/') {
+        navigate(from, { replace: true });
+      } else if (loggedInUser.role === 'author') {
+        navigate('/author', { replace: true });
+      } else if (loggedInUser.role === 'reviewer') {
+        navigate('/reviewer', { replace: true });
+      } else if (loggedInUser.role === 'admin') {
+        navigate('/admin', { replace: true });
+      }
+    } catch (err: any) {
+      showToast('error', 'Login Failed', err.message || 'Could not authenticate demo profile.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -81,15 +127,15 @@ export const LoginPage: React.FC = () => {
             <span>Fast Switch Demo Accounts:</span>
           </div>
           <div className="grid grid-cols-3 gap-2 text-xs">
-            {MOCK_USERS.slice(0, 3).map((u) => (
+            {DEMO_PROFILES.map((p) => (
               <button
-                key={u.id}
+                key={p.role}
                 type="button"
-                onClick={() => handleQuickDemo(u)}
+                onClick={() => handleQuickDemo(p)}
                 className="p-2 rounded-lg border border-slate-200 hover:border-brand-500 hover:bg-brand-50/50 text-left transition-all"
               >
-                <div className="font-semibold text-slate-800 capitalize truncate">{u.role}</div>
-                <div className="text-[10px] text-slate-400 font-mono truncate">{u.pseudonymId}</div>
+                <div className="font-semibold text-slate-800 capitalize truncate">{p.label}</div>
+                <div className="text-[10px] text-slate-400 font-mono truncate">{p.pseudonym}</div>
               </button>
             ))}
           </div>

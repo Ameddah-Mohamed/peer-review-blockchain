@@ -73,7 +73,7 @@ export const RegisterPage: React.FC = () => {
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Select Your Conference Role *
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setRole('author')}
@@ -99,20 +99,10 @@ export const RegisterPage: React.FC = () => {
                   <div className="text-xs font-semibold">Reviewer</div>
                   <div className="text-[10px] text-slate-500">Professor/Expert</div>
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => setRole('admin')}
-                  className={`p-2.5 rounded-xl border text-center transition-all ${
-                    role === 'admin'
-                      ? 'bg-purple-50 border-purple-500 text-purple-900 ring-2 ring-purple-500/20 font-semibold'
-                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  <div className="text-xs font-semibold">Admin</div>
-                  <div className="text-[10px] text-slate-500">Organizer</div>
-                </button>
               </div>
+              <p className="text-[11px] text-slate-400 mt-1.5">
+                Note: Administrator accounts are provisioned directly by conference organizers.
+              </p>
             </div>
 
             {/* Pseudonym banner */}
@@ -121,7 +111,7 @@ export const RegisterPage: React.FC = () => {
               <p>
                 A unique pseudonym (e.g.{' '}
                 <span className="font-mono font-bold text-purple-700">
-                  {role === 'author' ? 'AUTH-XXXXXX' : role === 'reviewer' ? 'REV-XXXXXX' : 'ADM-XXXXXX'}
+                  {role === 'author' ? 'AUTH-XXXXXX' : 'REV-XXXXXX'}
                 </span>
                 ) will be generated automatically to uphold double-blind privacy.
               </p>
