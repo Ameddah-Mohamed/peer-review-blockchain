@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
+import { Button } from '../common/Button';
 import { Paper, PaperVersion } from '../../types';
 import { formatDate, formatFileSize } from '../../utils/formatters';
 import { HashViewer } from '../blockchain/HashViewer';
 import { BlockchainBadge } from '../blockchain/BlockchainBadge';
 import { TxExplorerModal } from '../blockchain/TxExplorerModal';
-import { History, FileText } from 'lucide-react';
+import { History, FileText, Check } from 'lucide-react';
 
 interface VersionHistoryModalProps {
   isOpen: boolean;
@@ -22,6 +23,8 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
 
   if (!paper) return null;
 
+  const sortedVersions = [...(paper.versions || [])].sort((a, b) => b.version - a.version);
+
   return (
     <>
       <Modal
@@ -29,65 +32,75 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
         onClose={onClose}
         title={
           <div className="flex items-center gap-2">
-            <History className="w-5 h-5 text-brand-600" />
-            <span>Version Audit History</span>
+            <History className="w-4 h-4 text-slate-700" />
+            <span>Version Audit Ledger</span>
           </div>
         }
-        subtitle={`${paper.title} (${paper.versions.length} registered version${paper.versions.length > 1 ? 's' : ''})`}
+        subtitle={`${paper.title} • ${sortedVersions.length} recorded revision${sortedVersions.length > 1 ? 's' : ''}`}
         maxWidth="lg"
       >
         <div className="space-y-4">
-          <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
-            {[...(paper.versions || [])]
-              .sort((a, b) => b.version - a.version)
-              .map((ver: PaperVersion) => (
-              <div key={ver.version} className="relative group">
-                {/* Timeline node */}
-                <div className="absolute -left-[19px] top-1.5 w-4 h-4 rounded-full bg-white border-2 border-brand-600 group-hover:scale-110 transition-transform shadow-xs" />
+          <div className="relative pl-5 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-px before:bg-slate-200">
+            {sortedVersions.map((ver: PaperVersion) => {
+              const isCurrent = ver.version === paper.currentVersion;
+              return (
+                <div key={ver.version} className="relative group">
+                  {/* Timeline node */}
+                  <div
+                    className={`absolute -left-[17px] top-1.5 w-3 h-3 rounded-full border-2 ${
+                      isCurrent
+                        ? 'bg-slate-900 border-slate-900'
+                        : 'bg-white border-slate-400'
+                    }`}
+                  />
 
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 transition-all hover:border-slate-300 hover:shadow-xs">
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-900 text-sm">
-                        Version {ver.version}
-                      </span>
-                      {ver.version === paper.currentVersion && (
-                        <span className="text-[10px] uppercase font-bold bg-brand-100 text-brand-800 px-2 py-0.5 rounded-full">
-                          Latest / Active
+                  <div className="bg-white border border-slate-200 rounded-md p-4 space-y-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-900 text-xs">
+                          Revision {ver.version}
                         </span>
-                      )}
-                    </div>
-                    <span className="text-xs text-slate-500 font-medium">
-                      {formatDate(ver.submittedAt)}
-                    </span>
-                  </div>
-
-                  {ver.changeLog && (
-                    <p className="text-xs text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200 mb-3 leading-relaxed italic">
-                      "{ver.changeLog}"
-                    </p>
-                  )}
-
-                  <div className="space-y-2 text-xs">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                      <span className="text-slate-500 font-medium">SHA-256 Checksum:</span>
-                      <HashViewer hash={ver.fileHash} type="fileHash" head={10} tail={8} />
+                        {isCurrent && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-slate-100 text-slate-800 px-1.5 py-0.5 rounded border border-slate-200">
+                            <Check className="w-3 h-3 text-emerald-600" />
+                            Current Head
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] text-slate-500 font-mono">
+                        {formatDate(ver.submittedAt)}
+                      </span>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                      <span className="text-slate-500 font-medium">Transaction Proof:</span>
-                      <HashViewer hash={ver.blockchainTxHash} type="txHash" head={10} tail={8} />
-                    </div>
-                  </div>
+                    {ver.changeLog && (
+                      <p className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded border border-slate-200/80 leading-relaxed font-sans">
+                        {ver.changeLog}
+                      </p>
+                    )}
 
-                  <div className="flex items-center justify-between gap-2 pt-3 mt-3 border-t border-slate-200">
-                    <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                      <FileText className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{ver.fileName || `paper_${paper.id}_v${ver.version}.pdf`}</span>
-                      {ver.fileSize && <span>({formatFileSize(ver.fileSize)})</span>}
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
+                        <span className="text-slate-500 font-medium">SHA-256 Digest:</span>
+                        <HashViewer hash={ver.fileHash} type="fileHash" head={10} tail={8} />
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
+                        <span className="text-slate-500 font-medium">Ledger Tx:</span>
+                        <HashViewer hash={ver.blockchainTxHash} type="txHash" head={10} tail={8} />
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                        <FileText className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="truncate max-w-[200px] sm:max-w-[280px]">
+                          {ver.fileName || `paper_${paper.id}_v${ver.version}.pdf`}
+                        </span>
+                        {ver.fileSize && (
+                          <span className="text-slate-400 font-mono">({formatFileSize(ver.fileSize)})</span>
+                        )}
+                      </div>
+
                       <BlockchainBadge
                         verified={ver.verified}
                         blockNumber={ver.blockNumber}
@@ -106,17 +119,14 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          <div className="text-right pt-2 border-t border-slate-100">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-medium rounded-lg transition-colors"
-            >
+          <div className="flex justify-end pt-3 border-t border-slate-100">
+            <Button variant="secondary" size="sm" onClick={onClose}>
               Close
-            </button>
+            </Button>
           </div>
         </div>
       </Modal>

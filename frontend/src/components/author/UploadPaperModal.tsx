@@ -5,7 +5,7 @@ import { calculateSHA256 } from '../../utils/crypto';
 import { useNotification } from '../../context/NotificationContext';
 import { paperService } from '../../services/paperService';
 import { useAuth } from '../../context/AuthContext';
-import { Upload, CheckCircle2, Shield } from 'lucide-react';
+import { Upload, CheckCircle, Shield } from 'lucide-react';
 import { HashViewer } from '../blockchain/HashViewer';
 
 interface UploadPaperModalProps {
@@ -54,7 +54,7 @@ export const UploadPaperModal: React.FC<UploadPaperModalProps> = ({
     try {
       const hash = await calculateSHA256(selectedFile);
       setFileHash(hash);
-      showToast('info', 'Document Checksum Computed', 'SHA-256 hash successfully calculated.');
+      showToast('info', 'Checksum Computed', 'SHA-256 fingerprint generated.');
     } catch {
       showToast('error', 'Hashing Error', 'Failed to calculate file hash.');
     } finally {
@@ -66,7 +66,7 @@ export const UploadPaperModal: React.FC<UploadPaperModalProps> = ({
     e.preventDefault();
     if (!user) return;
     if (!title.trim() || !abstract.trim() || !file || !fileHash) {
-      showToast('warning', 'Missing Fields', 'Please complete all required fields and upload a PDF.');
+      showToast('warning', 'Missing Fields', 'Please complete all required fields and select a PDF.');
       return;
     }
 
@@ -92,7 +92,7 @@ export const UploadPaperModal: React.FC<UploadPaperModalProps> = ({
       showToast(
         'success',
         'Submission Recorded',
-        'Paper and SHA-256 integrity proof registered on the blockchain.'
+        'Manuscript and SHA-256 integrity proof registered on the blockchain.'
       );
       // Reset state
       setTitle('');
@@ -113,47 +113,46 @@ export const UploadPaperModal: React.FC<UploadPaperModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Submit Research Paper"
+      title="Submit Research Manuscript"
       subtitle="Initial submission with automated on-chain SHA-256 registration"
       maxWidth="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Blockchain proof info banner */}
-        <div className="bg-purple-50/70 border border-purple-200/80 rounded-xl p-3.5 flex items-start gap-3">
-          <Shield className="w-5 h-5 text-purple-600 shrink-0 mt-0.5" />
-          <div className="text-xs text-purple-900 leading-relaxed">
-            <span className="font-semibold text-purple-950">Double-Blind & Immutability:</span> Your
-            identity will be shielded behind pseudonym{' '}
-            <span className="font-mono font-bold bg-white px-1.5 py-0.2 rounded border border-purple-200">
+        {/* Double-Blind note */}
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 flex items-start gap-2.5 text-xs text-slate-600">
+          <Shield className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+          <div>
+            Your manuscript will be assigned under pseudonym{' '}
+            <span className="font-mono font-semibold text-slate-900 bg-white px-1.5 py-0.5 rounded border border-slate-200">
               {user?.pseudonymId}
             </span>
-            . A SHA-256 hash of the PDF will be sealed on the blockchain ledger for proof of existence.
+            . A SHA-256 checksum of your PDF will be permanently anchored to the smart contract ledger.
           </div>
         </div>
 
         {/* Paper Title */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Paper Title *</label>
+          <label className="block text-xs font-medium text-slate-700 mb-1">Manuscript Title *</label>
           <input
             type="text"
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Scalable Proof-of-Stake Consensus with Byzantine Fault Tolerance"
-            className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors"
+            className="w-full text-xs px-3 py-1.5 rounded-md border border-slate-200 focus:outline-none focus:border-slate-400 bg-slate-50/50"
           />
         </div>
 
-        {/* Track / Category */}
+        {/* Track and Keywords */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-medium text-slate-700 mb-1">
               Conference Track *
             </label>
             <select
               value={track}
               onChange={(e) => setTrack(e.target.value)}
-              className="w-full text-xs sm:text-sm px-3 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-white transition-colors"
+              className="w-full text-xs px-3 py-1.5 rounded-md border border-slate-200 focus:outline-none focus:border-slate-400 bg-white text-slate-800"
             >
               {CONFERENCE_TRACKS.map((t) => (
                 <option key={t} value={t}>
@@ -164,7 +163,7 @@ export const UploadPaperModal: React.FC<UploadPaperModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-medium text-slate-700 mb-1">
               Keywords (comma-separated)
             </label>
             <input
@@ -172,30 +171,30 @@ export const UploadPaperModal: React.FC<UploadPaperModalProps> = ({
               value={keywords}
               onChange={(e) => setKeywords(e.target.value)}
               placeholder="Consensus, Zero-Knowledge, Latency"
-              className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors"
+              className="w-full text-xs px-3 py-1.5 rounded-md border border-slate-200 focus:outline-none focus:border-slate-400 bg-slate-50/50"
             />
           </div>
         </div>
 
         {/* Abstract */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Abstract *</label>
+          <label className="block text-xs font-medium text-slate-700 mb-1">Abstract *</label>
           <textarea
             required
-            rows={4}
+            rows={3}
             value={abstract}
             onChange={(e) => setAbstract(e.target.value)}
-            placeholder="Provide a concise summary of the research methodology, problem formulation, and key findings..."
-            className="w-full text-xs sm:text-sm p-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors"
+            placeholder="Provide a concise summary of research methodology, technical contribution, and findings..."
+            className="w-full text-xs p-2.5 rounded-md border border-slate-200 focus:outline-none focus:border-slate-400 bg-slate-50/50"
           />
         </div>
 
-        {/* PDF File Upload */}
+        {/* PDF Dropzone */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">
+          <label className="block text-xs font-medium text-slate-700 mb-1">
             Manuscript PDF (Double-blind version) *
           </label>
-          <div className="border-2 border-dashed border-slate-300 rounded-xl p-5 text-center hover:border-brand-500 transition-colors bg-slate-50/50">
+          <div className="border border-dashed border-slate-300 rounded-lg p-5 text-center hover:border-slate-400 transition-colors bg-slate-50/40">
             <input
               type="file"
               id="paper-file-upload"
@@ -204,52 +203,48 @@ export const UploadPaperModal: React.FC<UploadPaperModalProps> = ({
               className="hidden"
             />
             <label htmlFor="paper-file-upload" className="cursor-pointer block">
-              <div className="w-10 h-10 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center mx-auto mb-2">
-                <Upload className="w-5 h-5" />
+              <div className="w-8 h-8 rounded-md bg-white border border-slate-200 text-slate-500 flex items-center justify-center mx-auto mb-1.5 shadow-2xs">
+                <Upload className="w-4 h-4" />
               </div>
-              <p className="text-xs font-medium text-slate-700">
-                {file ? file.name : 'Click or drop PDF here to upload'}
+              <p className="text-xs font-medium text-slate-800">
+                {file ? file.name : 'Select or drop PDF manuscript here'}
               </p>
               <p className="text-[11px] text-slate-400 mt-0.5">Maximum file size: 25MB (PDF only)</p>
             </label>
           </div>
         </div>
 
-        {/* Calculated SHA-256 */}
+        {/* Hashing status / result */}
         {isHashing && (
-          <div className="p-3 bg-slate-100 rounded-lg text-xs text-slate-600 flex items-center gap-2 animate-pulse">
-            <div className="w-3.5 h-3.5 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-            <span>Computing cryptographic SHA-256 digest in browser...</span>
+          <div className="p-2.5 bg-slate-100 rounded text-xs text-slate-600 flex items-center gap-2">
+            <div className="w-3.5 h-3.5 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
+            <span className="font-mono text-[11px]">Computing SHA-256 fingerprint in browser...</span>
           </div>
         )}
 
         {fileHash && !isHashing && (
-          <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-800 mb-1">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800">
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
               <span>Calculated SHA-256 Digest:</span>
             </div>
             <HashViewer hash={fileHash} type="fileHash" truncate={false} />
-            <p className="text-[11px] text-emerald-700/80 mt-1.5">
-              This exact fingerprint will be signed and verified on-chain.
-            </p>
           </div>
         )}
 
-        {/* Buttons */}
-        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-          <Button variant="outline" size="sm" type="button" onClick={onClose}>
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <Button variant="outline" size="xs" type="button" onClick={onClose}>
             Cancel
           </Button>
           <Button
             variant="primary"
-            size="sm"
+            size="xs"
             type="submit"
             isLoading={isSubmitting}
             disabled={!file || !fileHash || isHashing}
-            leftIcon={<Shield className="w-4 h-4" />}
           >
-            Submit & Record on Chain
+            Submit & Record on Ledger
           </Button>
         </div>
       </form>

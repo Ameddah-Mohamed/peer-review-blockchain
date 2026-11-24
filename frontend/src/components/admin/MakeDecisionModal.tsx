@@ -5,7 +5,7 @@ import { adminService } from '../../services/adminService';
 import { useNotification } from '../../context/NotificationContext';
 import { useAuth } from '../../context/AuthContext';
 import { Paper } from '../../types';
-import { Award, CheckCircle, XCircle, RotateCcw } from 'lucide-react';
+import { CheckCircle2, XCircle, RotateCcw, Award } from 'lucide-react';
 import { Badge } from '../common/Badge';
 
 interface MakeDecisionModalProps {
@@ -65,79 +65,84 @@ export const MakeDecisionModal: React.FC<MakeDecisionModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Record Final Conference Decision"
-      subtitle={`Paper: ${paper.title}`}
+      title="Record Editorial Decision"
+      subtitle={`Manuscript: ${paper.title}`}
       maxWidth="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Peer Reviews Summary Box */}
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
-          <div className="flex items-center justify-between font-semibold text-slate-800">
-            <span>Peer Reviews Summary ({reviews.length} submitted):</span>
-            <span className="font-mono bg-white px-2 py-0.5 rounded border border-slate-200">
-              Avg Score: {averageScore} / 5.0
+        <div className="bg-slate-50 border border-slate-200 rounded-md p-3.5 space-y-2 text-xs">
+          <div className="flex items-center justify-between font-medium text-slate-800">
+            <span>Committee Reviews ({reviews.length} completed):</span>
+            <span className="font-mono bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-900 font-semibold">
+              Mean Score: {averageScore} / 5.0
             </span>
           </div>
 
           {reviews.length > 0 ? (
             <div className="space-y-1.5 pt-1">
               {reviews.map((r, i) => (
-                <div key={r.id || i} className="flex items-center justify-between bg-white p-2 rounded-lg border border-slate-100">
-                  <span className="font-mono text-slate-600">{r.reviewerPseudonym}</span>
+                <div
+                  key={r.id || i}
+                  className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded border border-slate-200"
+                >
+                  <span className="font-mono text-slate-700 text-[11px]">{r.reviewerPseudonym}</span>
                   <div className="flex items-center gap-2">
                     <Badge recommendation={r.recommendation} size="sm" />
-                    <span className="font-bold text-slate-700">{r.overallScore.toFixed(1)}/5</span>
+                    <span className="font-mono font-bold text-slate-800 text-[11px]">
+                      {r.overallScore.toFixed(1)}/5
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-slate-500 italic py-1">No completed reviews submitted yet.</p>
+            <p className="text-slate-500 italic py-1 text-[11px]">No peer reviews completed yet.</p>
           )}
         </div>
 
         {/* Decision Selection */}
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-            Final Verdict *
+            Final Editorial Verdict <span className="text-rose-500">*</span>
           </label>
           <div className="grid grid-cols-3 gap-2">
             <button
               type="button"
               onClick={() => setDecision('accepted')}
-              className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-1.5 ${
+              className={`p-2.5 rounded-md border text-center transition-colors flex flex-col items-center gap-1 ${
                 decision === 'accepted'
-                  ? 'bg-emerald-50 border-emerald-500 text-emerald-900 ring-2 ring-emerald-500/20 font-semibold'
+                  ? 'bg-emerald-50 border-emerald-600 text-emerald-900 font-medium'
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
             >
-              <CheckCircle className="w-5 h-5 text-emerald-600" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               <span className="text-xs">Accept</span>
             </button>
 
             <button
               type="button"
               onClick={() => setDecision('revision_requested')}
-              className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-1.5 ${
+              className={`p-2.5 rounded-md border text-center transition-colors flex flex-col items-center gap-1 ${
                 decision === 'revision_requested'
-                  ? 'bg-amber-50 border-amber-500 text-amber-900 ring-2 ring-amber-500/20 font-semibold'
+                  ? 'bg-amber-50 border-amber-600 text-amber-900 font-medium'
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
             >
-              <RotateCcw className="w-5 h-5 text-amber-600" />
+              <RotateCcw className="w-4 h-4 text-amber-600" />
               <span className="text-xs">Revision</span>
             </button>
 
             <button
               type="button"
               onClick={() => setDecision('rejected')}
-              className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center gap-1.5 ${
+              className={`p-2.5 rounded-md border text-center transition-colors flex flex-col items-center gap-1 ${
                 decision === 'rejected'
-                  ? 'bg-rose-50 border-rose-500 text-rose-900 ring-2 ring-rose-500/20 font-semibold'
+                  ? 'bg-rose-50 border-rose-600 text-rose-900 font-medium'
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
             >
-              <XCircle className="w-5 h-5 text-rose-600" />
+              <XCircle className="w-4 h-4 text-rose-600" />
               <span className="text-xs">Reject</span>
             </button>
           </div>
@@ -146,19 +151,19 @@ export const MakeDecisionModal: React.FC<MakeDecisionModalProps> = ({
         {/* Remarks */}
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1">
-            Official Decision Remarks & Notification *
+            Official Editorial Remarks & Instructions <span className="text-rose-500">*</span>
           </label>
           <textarea
             required
             rows={4}
             value={remarks}
             onChange={(e) => setRemarks(e.target.value)}
-            placeholder="Official rationale for acceptance/rejection sent to the author and permanently sealed on-chain..."
-            className="w-full text-xs sm:text-sm p-3 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-colors"
+            placeholder="Official rationale and guidance sent to the author and permanently sealed on the blockchain ledger..."
+            className="w-full text-xs p-3 rounded-md border border-slate-300 focus:outline-none focus:border-slate-900 transition-colors bg-white font-sans text-slate-900 placeholder:text-slate-400"
           />
         </div>
 
-        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
           <Button variant="outline" size="sm" type="button" onClick={onClose}>
             Cancel
           </Button>
@@ -169,7 +174,7 @@ export const MakeDecisionModal: React.FC<MakeDecisionModalProps> = ({
             isLoading={isSubmitting}
             leftIcon={<Award className="w-4 h-4" />}
           >
-            Record Decision on Chain
+            Record Decision
           </Button>
         </div>
       </form>

@@ -31,10 +31,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const newToast: Toast = { id, type, title, message };
       setToasts((prev) => [...prev, newToast]);
 
-      // Auto dismiss after 5 seconds
+      // Auto dismiss after 4.5 seconds
       setTimeout(() => {
         removeToast(id);
-      }, 5000);
+      }, 4500);
     },
     [removeToast]
   );
@@ -43,37 +43,32 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     <NotificationContext.Provider value={{ toasts, showToast, removeToast }}>
       {children}
       {/* Toast container */}
-      <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-md w-full pointer-events-none">
+      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-lg border backdrop-blur-md transition-all duration-300 animate-slide-up ${
-              toast.type === 'success'
-                ? 'bg-emerald-50/95 border-emerald-200 text-emerald-950'
-                : toast.type === 'error'
-                ? 'bg-rose-50/95 border-rose-200 text-rose-950'
-                : toast.type === 'warning'
-                ? 'bg-amber-50/95 border-amber-200 text-amber-950'
-                : 'bg-slate-900/95 border-slate-700 text-white'
-            }`}
+            className="pointer-events-auto flex items-start gap-3 p-3.5 rounded-md bg-white border border-slate-200 shadow-md text-slate-900 transition-all duration-200 animate-slide-up"
           >
             <div className="shrink-0 mt-0.5">
-              {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
-              {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-rose-600" />}
-              {toast.type === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-600" />}
-              {toast.type === 'info' && <Info className="w-5 h-5 text-brand-400" />}
+              {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+              {toast.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-600" />}
+              {toast.type === 'warning' && <AlertTriangle className="w-4 h-4 text-amber-600" />}
+              {toast.type === 'info' && <Info className="w-4 h-4 text-slate-700" />}
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-semibold leading-tight">{toast.title}</h4>
+              <h4 className="text-xs font-semibold text-slate-900 leading-tight">{toast.title}</h4>
               {toast.message && (
-                <p className="text-xs mt-1 opacity-90 leading-relaxed break-words">{toast.message}</p>
+                <p className="text-[11px] mt-0.5 text-slate-500 leading-relaxed break-words">
+                  {toast.message}
+                </p>
               )}
             </div>
             <button
               onClick={() => removeToast(toast.id)}
-              className="shrink-0 text-slate-400 hover:text-slate-600 transition-colors p-1"
+              className="shrink-0 text-slate-400 hover:text-slate-600 transition-colors p-0.5"
+              aria-label="Dismiss notification"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         ))}
