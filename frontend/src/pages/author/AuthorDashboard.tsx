@@ -165,7 +165,9 @@ export const AuthorDashboard: React.FC = () => {
           ) : (
             <div className="divide-y divide-slate-100">
               {papers.map((paper) => {
-                const latestVersion = paper.versions[0];
+                const latestVersion =
+                  paper.versions?.find((v) => v.version === paper.currentVersion) ||
+                  (paper.versions?.length ? paper.versions[paper.versions.length - 1] : null);
                 return (
                   <div
                     key={paper.id}

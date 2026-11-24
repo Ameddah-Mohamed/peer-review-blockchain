@@ -154,7 +154,9 @@ export const AdminSubmissionsPage: React.FC = () => {
           ) : (
             <div className="divide-y divide-slate-100">
               {filtered.map((paper) => {
-                const latestVer = paper.versions[0];
+                const latestVer =
+                  paper.versions?.find((v) => v.version === paper.currentVersion) ||
+                  (paper.versions?.length ? paper.versions[paper.versions.length - 1] : null);
                 const reviews = paper.reviews || [];
                 const avgScore =
                   reviews.length > 0

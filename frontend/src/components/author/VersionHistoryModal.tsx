@@ -38,7 +38,9 @@ export const VersionHistoryModal: React.FC<VersionHistoryModalProps> = ({
       >
         <div className="space-y-4">
           <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
-            {paper.versions.map((ver: PaperVersion) => (
+            {[...(paper.versions || [])]
+              .sort((a, b) => b.version - a.version)
+              .map((ver: PaperVersion) => (
               <div key={ver.version} className="relative group">
                 {/* Timeline node */}
                 <div className="absolute -left-[19px] top-1.5 w-4 h-4 rounded-full bg-white border-2 border-brand-600 group-hover:scale-110 transition-transform shadow-xs" />
