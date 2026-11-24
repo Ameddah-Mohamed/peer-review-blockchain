@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { Button } from '../../components/common/Button';
 import { UserRole } from '../../types';
-import { FileText, Shield, User, Mail, Lock, Building, ArrowRight } from 'lucide-react';
+import { ShieldCheck, User, Mail, Lock, Building, ArrowRight } from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
   const { register } = useAuth();
@@ -52,21 +52,23 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-50">
-      <div className="max-w-md w-full space-y-6">
-        {/* Header */}
-        <div className="text-center">
-          <div className="w-10 h-10 rounded-lg bg-slate-900 text-white flex items-center justify-center mx-auto shadow-2xs mb-3">
-            <FileText className="w-5 h-5" />
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        {/* Brand Icon & Wordmark */}
+        <div className="text-center space-y-2">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-slate-950 font-bold shadow-md shadow-emerald-500/20 mx-auto">
+            <span className="font-mono text-base tracking-tighter">AL</span>
           </div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Create an Account</h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Join the academic conference peer-review network
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+            Create Academic Identity
+          </h2>
+          <p className="text-xs text-slate-500">
+            Join the decentralized conference review & verification network
           </p>
         </div>
 
         {/* Card */}
-        <div className="bg-white p-6 sm:p-7 rounded-lg border border-slate-200 shadow-2xs">
+        <div className="mt-6 bg-white py-8 px-6 shadow-2xs rounded-xl border border-slate-200 sm:px-8 space-y-5">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Role selector */}
             <div>
@@ -77,43 +79,44 @@ export const RegisterPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setRole('author')}
-                  className={`p-2.5 rounded-md border text-center transition-all ${
+                  className={`p-3 rounded-lg border text-center transition-all ${
                     role === 'author'
-                      ? 'bg-slate-100 border-slate-900 text-slate-900 font-semibold shadow-2xs'
+                      ? 'bg-slate-900 text-white border-slate-900 font-semibold shadow-2xs'
                       : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  <div className="text-xs font-medium">Author</div>
-                  <div className="text-[10px] text-slate-400">Student / Researcher</div>
+                  <div className="text-xs font-semibold">Author</div>
+                  <div className={`text-[10px] mt-0.5 ${role === 'author' ? 'text-slate-300' : 'text-slate-400'}`}>
+                    Submit Manuscripts
+                  </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setRole('reviewer')}
-                  className={`p-2.5 rounded-md border text-center transition-all ${
+                  className={`p-3 rounded-lg border text-center transition-all ${
                     role === 'reviewer'
-                      ? 'bg-slate-100 border-slate-900 text-slate-900 font-semibold shadow-2xs'
+                      ? 'bg-slate-900 text-white border-slate-900 font-semibold shadow-2xs'
                       : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
-                  <div className="text-xs font-medium">Reviewer</div>
-                  <div className="text-[10px] text-slate-400">Professor / Expert</div>
+                  <div className="text-xs font-semibold">Reviewer</div>
+                  <div className={`text-[10px] mt-0.5 ${role === 'reviewer' ? 'text-slate-300' : 'text-slate-400'}`}>
+                    Peer Committee Expert
+                  </div>
                 </button>
               </div>
-              <p className="text-[11px] text-slate-400 mt-1.5">
-                Note: Administrator accounts are provisioned directly by conference organizers.
-              </p>
             </div>
 
             {/* Pseudonym banner */}
-            <div className="bg-slate-50 border border-slate-200 rounded-md p-3 text-xs text-slate-600 flex items-start gap-2.5">
-              <Shield className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
-              <p>
-                A unique pseudonym (e.g.{' '}
-                <span className="font-mono font-bold text-slate-800">
-                  {role === 'author' ? 'AUTH-XXXXXX' : 'REV-XXXXXX'}
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-600 flex items-start gap-2.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <p className="leading-relaxed">
+                A unique, cryptographically random pseudonym (e.g.{' '}
+                <span className="font-mono font-medium text-slate-900">
+                  {role === 'author' ? 'AUTH-9F4B12' : 'REV-8C2190'}
                 </span>
-                ) will be generated automatically to uphold double-blind privacy.
+                ) will be generated for you to ensure rigorous double-blind evaluation.
               </p>
             </div>
 
@@ -121,14 +124,14 @@ export const RegisterPage: React.FC = () => {
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1">Full Name *</label>
               <div className="relative">
-                <User className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                <User className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Dr. Alice Chen"
-                  className="w-full text-xs pl-8 pr-3 py-2 rounded-md border border-slate-200 focus:outline-none focus:border-slate-400 bg-slate-50/50"
+                  className="w-full text-xs pl-9 pr-3.5 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 bg-slate-50/50"
                 />
               </div>
             </div>
@@ -139,14 +142,14 @@ export const RegisterPage: React.FC = () => {
                 Institutional Email *
               </label>
               <div className="relative">
-                <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@university.edu"
-                  className="w-full text-xs pl-8 pr-3 py-2 rounded-md border border-slate-200 focus:outline-none focus:border-slate-400 bg-slate-50/50"
+                  className="w-full text-xs pl-9 pr-3.5 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 bg-slate-50/50"
                 />
               </div>
             </div>
@@ -157,13 +160,13 @@ export const RegisterPage: React.FC = () => {
                 University / Institution
               </label>
               <div className="relative">
-                <Building className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                <Building className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="text"
                   value={affiliation}
                   onChange={(e) => setAffiliation(e.target.value)}
-                  placeholder="e.g. Department of Computer Science, State University"
-                  className="w-full text-xs pl-8 pr-3 py-2 rounded-md border border-slate-200 focus:outline-none focus:border-slate-400 bg-slate-50/50"
+                  placeholder="e.g. Department of Computer Science, University"
+                  className="w-full text-xs pl-9 pr-3.5 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 bg-slate-50/50"
                 />
               </div>
             </div>
@@ -172,32 +175,33 @@ export const RegisterPage: React.FC = () => {
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1">Password *</label>
               <div className="relative">
-                <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full text-xs pl-8 pr-3 py-2 rounded-md border border-slate-200 focus:outline-none focus:border-slate-400 bg-slate-50/50"
+                  className="w-full text-xs pl-9 pr-3.5 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 bg-slate-50/50"
                 />
               </div>
             </div>
 
             <Button
-              type="submit"
               variant="primary"
-              className="w-full"
+              size="md"
+              type="submit"
               isLoading={isLoading}
+              className="w-full mt-2"
               rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
             >
-              Create Account
+              Register Identity
             </Button>
           </form>
 
-          <div className="mt-5 text-center text-xs text-slate-500 border-t border-slate-100 pt-4">
+          <div className="pt-2 text-center text-xs text-slate-500 border-t border-slate-100">
             Already have an account?{' '}
-            <Link to="/login" className="font-medium text-slate-900 hover:underline">
+            <Link to="/login" className="font-semibold text-emerald-700 hover:text-emerald-800">
               Sign In
             </Link>
           </div>

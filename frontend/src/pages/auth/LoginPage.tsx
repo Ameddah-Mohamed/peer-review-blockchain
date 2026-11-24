@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { Button } from '../../components/common/Button';
-import { FileText, ArrowRight, Lock, Mail } from 'lucide-react';
+import { ArrowRight, Lock, Mail, ShieldCheck } from 'lucide-react';
 
 interface DemoProfile {
   role: 'author' | 'reviewer' | 'admin';
@@ -98,100 +98,124 @@ export const LoginPage: React.FC = () => {
         navigate('/reviewer', { replace: true });
       } else if (loggedInUser?.role === 'admin') {
         navigate('/admin', { replace: true });
+      } else {
+        navigate('/author', { replace: true });
       }
     } catch (err: any) {
-      showToast('error', 'Login Failed', err.message || 'Could not authenticate demo profile.');
+      showToast('error', 'Demo Login Error', err.message || 'Failed to authenticate.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-50">
-      <div className="max-w-sm w-full space-y-6">
-        {/* Brand header */}
-        <div className="text-center">
-          <div className="w-10 h-10 rounded-lg bg-slate-900 text-white flex items-center justify-center mx-auto shadow-2xs mb-3">
-            <FileText className="w-5 h-5" />
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        {/* Brand Icon & Wordmark */}
+        <div className="text-center space-y-2">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-slate-950 font-bold shadow-md shadow-emerald-500/20 mx-auto">
+            <span className="font-mono text-base tracking-tighter">AL</span>
           </div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">AcademicLedger</h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Peer-review tracker backed by distributed ledger proofs
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+            AcademicLedger
+          </h2>
+          <p className="text-xs text-slate-500">
+            Decentralized Peer-Review & Research Document Notarization
           </p>
         </div>
 
-        {/* Demo Accounts Bar */}
-        <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-2xs space-y-2">
-          <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-            Fast Switch Demo Accounts
+        {/* Main Card */}
+        <div className="mt-6 bg-white py-8 px-6 shadow-2xs rounded-xl border border-slate-200 sm:px-8 space-y-6">
+          {/* Quick Demo Switcher */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+              <span>Quick Demo Sign-In</span>
+              <span className="font-mono text-emerald-600">1-Click</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {DEMO_PROFILES.map((p) => (
+                <button
+                  key={p.role}
+                  type="button"
+                  onClick={() => handleQuickDemo(p)}
+                  className="p-2 rounded-lg border border-slate-200 text-center hover:border-slate-400 hover:bg-slate-50/80 transition-all text-xs"
+                >
+                  <div className="font-bold text-slate-900">{p.label}</div>
+                  <div className="text-[10px] text-slate-400 font-mono mt-0.5 truncate">{p.name.split(' ')[0]}</div>
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-3 gap-1.5 text-xs">
-            {DEMO_PROFILES.map((p) => (
-              <button
-                key={p.role}
-                type="button"
-                onClick={() => handleQuickDemo(p)}
-                className="p-2 rounded border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-left transition-colors"
-              >
-                <div className="font-medium text-slate-800 text-xs">{p.label}</div>
-                <div className="text-[10px] text-slate-400 font-mono truncate">{p.pseudonym}</div>
-              </button>
-            ))}
-          </div>
-        </div>
 
-        {/* Form Card */}
-        <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-2xs">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-white px-2 text-slate-400">or sign in with credentials</span>
+            </div>
+          </div>
+
+          {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1">
                 Institutional Email
               </label>
               <div className="relative">
-                <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@university.edu"
-                  className="w-full text-xs pl-8 pr-3 py-2 rounded-md border border-slate-200 focus:outline-none focus:border-slate-400 bg-slate-50/50"
+                  className="w-full text-xs pl-9 pr-3.5 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 bg-slate-50/50"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Password</label>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Password
+              </label>
               <div className="relative">
-                <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full text-xs pl-8 pr-3 py-2 rounded-md border border-slate-200 focus:outline-none focus:border-slate-400 bg-slate-50/50"
+                  className="w-full text-xs pl-9 pr-3.5 py-2.5 rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 bg-slate-50/50"
                 />
               </div>
             </div>
 
             <Button
-              type="submit"
               variant="primary"
-              className="w-full"
+              size="md"
+              type="submit"
               isLoading={isLoading}
+              className="w-full"
               rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
             >
-              Sign In
+              Sign In to Workspace
             </Button>
           </form>
 
-          <div className="mt-5 text-center text-xs text-slate-500 border-t border-slate-100 pt-4">
-            Don't have an account yet?{' '}
-            <Link to="/register" className="font-medium text-slate-900 hover:underline">
-              Register as Author or Reviewer
+          <div className="pt-2 text-center text-xs text-slate-500 border-t border-slate-100">
+            Need a participant account?{' '}
+            <Link to="/register" className="font-semibold text-emerald-700 hover:text-emerald-800">
+              Register New Identity
             </Link>
           </div>
+        </div>
+
+        {/* Security / Privacy Footer */}
+        <div className="mt-4 text-center text-[11px] text-slate-400 flex items-center justify-center gap-1.5 font-mono">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Double-blind pseudonymity cryptographically guaranteed</span>
         </div>
       </div>
     </div>

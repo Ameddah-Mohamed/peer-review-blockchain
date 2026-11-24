@@ -9,7 +9,7 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-800 antialiased;
+    @apply bg-[#f8fafc] text-slate-900 antialiased;
     font-family: var(--font-sans);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
@@ -21,16 +21,26 @@
     font-feature-settings: "zero", "tnum";
   }
 
-  /* Academic tabular numbers for timestamps, blocks, and scores */
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
 }
 
-/* Subtle, refined scrollbars */
+/* Custom dark scrollbar for sidebar, light for workspace */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -43,22 +53,22 @@
   background: #94a3b8;
 }
 
-/* Academic data table styling */
-.academic-table {
+/* Modern academic table styling */
+.modern-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.8125rem; /* 13px */
+  font-size: 0.8125rem;
 }
 
-.academic-table th {
-  @apply text-left font-semibold text-slate-600 bg-slate-50/90 py-2.5 px-3.5 border-b border-slate-200 uppercase tracking-wider text-[11px];
+.modern-table th {
+  @apply text-left font-semibold text-slate-500 bg-slate-50/90 py-3 px-4 border-b border-slate-200 text-xs;
 }
 
-.academic-table td {
-  @apply py-3 px-3.5 border-b border-slate-100 text-slate-700 align-middle;
+.modern-table td {
+  @apply py-3.5 px-4 border-b border-slate-100 text-slate-700 align-middle;
 }
 
-.academic-table tbody tr {
-  @apply transition-colors duration-100 hover:bg-slate-50/70;
+.modern-table tbody tr {
+  @apply transition-colors duration-150 hover:bg-slate-50/80;
 }
