@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
-import { calculateSHA256 } from '../../utils/crypto';
+import { calculateReviewHash } from '../../utils/crypto';
 import { useNotification } from '../../context/NotificationContext';
 import { reviewService } from '../../services/reviewService';
 import { useAuth } from '../../context/AuthContext';
@@ -55,17 +55,15 @@ export const SubmitReviewModal: React.FC<SubmitReviewModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      // Calculate cryptographic review integrity digest
-      const reviewPayload = JSON.stringify({
+      // Calculate cryptographic review integrity digest matching backend canonical schema
+      const reviewHash = await calculateReviewHash({
         paperId: assignment.paperId,
-        reviewerPseudonym: user.pseudonymId,
+        paperVersion: assignment.currentVersion || 1,
         scores,
         overallScore,
         recommendation,
-        authorComments: authorComments.trim(),
-        timestamp: new Date().toISOString(),
+        authorComments,
       });
-      const reviewHash = await calculateSHA256(reviewPayload);
 
       await reviewService.submitReview(
         {
