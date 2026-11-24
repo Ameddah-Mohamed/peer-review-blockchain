@@ -57,14 +57,25 @@ export const VerifyPaperPage: React.FC = () => {
     setResult(null);
 
     try {
-      const calculatedDigest = await calculateSHA256(selectedFile);
-      const res = await blockchainService.verifyPaper(
-        inputPaperId || undefined,
-        calculatedDigest
-      );
-      setResult(res);
+      if (inputPaperId) {
+        const calculatedDigest = await calculateSHA256(selectedFile);
+        const res = await blockchainService.verifyPaper(
+          inputPaperId.trim(),
+          calculatedDigest
+        );
+        setResult(res);
+      } else {
+        const res = await blockchainService.verifyFile(selectedFile);
+        setResult(res);
+      }
     } catch (err: any) {
       console.error(err);
+      setResult({
+        verified: false,
+        matchStatus: 'RECORD_NOT_FOUND',
+        calculatedHash: '',
+        message: err.message || 'Verification failed. Please check network connection.',
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -79,12 +90,18 @@ export const VerifyPaperPage: React.FC = () => {
 
     try {
       const res = await blockchainService.verifyPaper(
-        inputPaperId || undefined,
-        inputHash || undefined
+        inputPaperId ? inputPaperId.trim() : undefined,
+        inputHash ? inputHash.trim() : undefined
       );
       setResult(res);
     } catch (err: any) {
       console.error(err);
+      setResult({
+        verified: false,
+        matchStatus: 'RECORD_NOT_FOUND',
+        calculatedHash: inputHash || '',
+        message: err.message || 'Verification failed. Please check network connection.',
+      });
     } finally {
       setIsProcessing(false);
     }

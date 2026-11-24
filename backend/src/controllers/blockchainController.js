@@ -8,20 +8,51 @@ exports.verifyPaper = async (req, res, next) => {
   try {
     const { paperId, fileHash, version } = req.body;
 
-    if (!paperId || !fileHash) {
+    if (!fileHash) {
       return res.status(400).json({
         success: false,
-        message: "paperId and fileHash are required fields",
+        message: "fileHash is a required field",
       });
     }
 
-    const versionNum = parseInt(version) || 1;
+    let targetPaperId = paperId;
+    let versionNum = version ? parseInt(version) : null;
+
+    if (!targetPaperId) {
+      const matchedVersion = await PaperVersion.findOne({
+        fileHash: fileHash.toLowerCase().trim(),
+      })
+        .sort({ createdAt: -1 })
+        .populate("paper");
+
+      if (matchedVersion && matchedVersion.paper) {
+        targetPaperId = matchedVersion.paper.paperCustomId;
+        if (!versionNum) versionNum = matchedVersion.version;
+      }
+    }
+
+    if (!targetPaperId) {
+      const resultPayload = {
+        verified: false,
+        matchStatus: "RECORD_NOT_FOUND",
+        calculatedHash: fileHash,
+        message: "No record matching this hash found on the blockchain ledger",
+        blockchainRecord: null,
+      };
+      return res.status(200).json({
+        success: true,
+        result: resultPayload,
+        ...resultPayload,
+      });
+    }
+
+    if (!versionNum) versionNum = 1;
 
     // 1. Verify against smart contract
     let onChainVerification = null;
     try {
       onChainVerification = await blockchainService.verifyPaperVersionHash(
-        paperId,
+        targetPaperId,
         versionNum,
         fileHash
       );
@@ -31,7 +62,7 @@ exports.verifyPaper = async (req, res, next) => {
 
     // 2. Fetch paper from DB if present
     const paper = await Paper.findOne({
-      $or: [{ paperCustomId: paperId }, { _id: paperId.match(/^[0-9a-fA-F]{24}$/) ? paperId : null }],
+      $or: [{ paperCustomId: targetPaperId }, { _id: targetPaperId.match(/^[0-9a-fA-F]{24}$/) ? targetPaperId : null }],
     });
 
     const versionDoc = paper
@@ -39,7 +70,7 @@ exports.verifyPaper = async (req, res, next) => {
       : null;
 
     const txRecord = await BlockchainTransaction.findOne({
-      paperId,
+      paperId: targetPaperId,
       version: versionNum,
       eventType: { $in: ["PaperRegistered", "VersionRegistered"] },
     }).sort({ timestamp: -1 });
@@ -55,13 +86,13 @@ exports.verifyPaper = async (req, res, next) => {
       matchStatus,
       calculatedHash: fileHash,
       blockchainRecord: {
-        paperId,
+        paperId: targetPaperId,
         version: versionNum,
         onChainHash: onChainVerification ? onChainVerification.registeredHash : null,
         providedHash: fileHash,
         authorPseudonym: paper ? paper.authorPseudonym : "ANONYMOUS",
-        blockNumber: txRecord ? txRecord.blockNumber : null,
-        blockTimestamp: onChainVerification ? onChainVerification.date : null,
+        blockNumber: txRecord ? txRecord.blockNumber : (versionDoc ? versionDoc.blockchainBlockNumber : null),
+        blockTimestamp: onChainVerification ? onChainVerification.date : (versionDoc ? versionDoc.submittedAt : null),
         txHash: txRecord ? txRecord.txHash : (versionDoc ? versionDoc.blockchainTxHash : null),
       },
     };
