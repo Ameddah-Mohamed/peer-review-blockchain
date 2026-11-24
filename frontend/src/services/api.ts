@@ -3,7 +3,7 @@
  * Seamlessly handles JWT tokens, base URL configuration, and isolated mock fallback
  */
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const FORCE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
 export interface ApiResponse<T> {

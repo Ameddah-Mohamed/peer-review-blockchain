@@ -3,7 +3,7 @@
 ## 1. Overview & Architecture
 This document defines the REST API contract between the Frontend (React + TypeScript) and the Backend (Node.js/Express + MongoDB + Hardhat/Ethereum).
 
-- **Base URL**: Set via environment variable `VITE_API_BASE_URL` (default: `http://localhost:5000/api`)
+- **Base URL**: Set via environment variable `VITE_API_BASE_URL` (default: `/api` or `http://localhost:5001/api`)
 - **Authentication**: Bearer Token in `Authorization` header (`Bearer <jwt_token>`)
 - **Data Format**: `application/json` (except file uploads which use `multipart/form-data`)
 - **Double-Blind Integrity**: Author identities MUST NEVER be exposed in Reviewer endpoints. Reviewers only see `paperId`, `title`, `abstract`, `track`, `pseudonymId`.

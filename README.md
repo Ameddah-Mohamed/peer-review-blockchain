@@ -68,7 +68,7 @@ npm run seed
 # Start backend server
 npm start
 ```
-The server will be running on `http://localhost:5000/api`.
+The server will be running on `http://localhost:5001/api`.
 
 ### 4. Run Automated Tests
 ```bash
