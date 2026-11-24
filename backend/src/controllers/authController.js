@@ -49,7 +49,15 @@ exports.register = async (req, res, next) => {
     }
 
     let assignedRole = (role || "author").toLowerCase().trim();
-    if (assignedRole === "administrator") assignedRole = "admin";
+    if (assignedRole === "admin" || assignedRole === "administrator") {
+      return res.status(403).json({
+        success: false,
+        message: "Direct self-registration with administrator role is forbidden",
+      });
+    }
+    if (!["author", "reviewer"].includes(assignedRole)) {
+      assignedRole = "author";
+    }
 
     const user = new User({
       name: name.trim(),

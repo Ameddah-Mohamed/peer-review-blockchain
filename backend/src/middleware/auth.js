@@ -14,42 +14,22 @@ const auth = async (req, res, next) => {
     const token = authHeader.replace("Bearer ", "").trim();
     const secret = process.env.JWT_SECRET || "conference_jwt_super_secret_2026";
 
-    let user;
-
-    if (token.startsWith("demo_token_") || token.startsWith("mock_")) {
-      // Support demo roles in development
-      let targetRole = "author";
-      if (token.includes("admin") || token.includes("0001")) {
-        targetRole = "admin";
-      } else if (token.includes("rev") || token.includes("0002")) {
-        targetRole = "reviewer";
-      }
-
-      user = await User.findOne({
-        role: targetRole === "admin" ? { $in: ["admin", "administrator"] } : targetRole,
+    let decoded;
+    try {
+      decoded = jwt.verify(token, secret);
+    } catch (jwtErr) {
+      return res.status(401).json({
+        success: false,
+        message: jwtErr.name === "TokenExpiredError" ? "Token has expired" : "Invalid authentication token",
       });
+    }
 
-      if (!user) {
-        user = await User.findOne();
-      }
-    } else {
-      let decoded;
-      try {
-        decoded = jwt.verify(token, secret);
-      } catch (jwtErr) {
-        return res.status(401).json({
-          success: false,
-          message: jwtErr.name === "TokenExpiredError" ? "Token has expired" : "Invalid authentication token",
-        });
-      }
-
-      user = await User.findById(decoded.id);
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: "User associated with token no longer exists",
-        });
-      }
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User associated with token no longer exists",
+      });
     }
 
     req.user = user;
